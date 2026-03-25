@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { LayoutDashboard, ShoppingCart, Users, TrendingDown, Activity, Settings, Hexagon, ChevronLeft, Menu, LogOut } from "lucide-react";
 import { Suspense, useState } from "react";
-import { setRole } from '@/app/actions/roleActions';
 
 function SidebarNavigationContent({ isAdmin, projects }: { isAdmin: boolean, projects: any[] }) {
   const searchParams = useSearchParams();
@@ -155,20 +154,7 @@ function SidebarNavigationContent({ isAdmin, projects }: { isAdmin: boolean, pro
              {(!isCollapsed || isMobileOpen) && 'Đăng Xuất'}
           </button>
 
-          <form action={async () => {
-            await setRole(isAdmin ? 'staff' : 'admin');
-          }}>
-            <button type="submit" className={`w-full text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 py-2 rounded transition-colors shadow-sm ${isCollapsed && !isMobileOpen ? 'px-2' : 'px-0'}`} title={`Đóng vai ${isAdmin ? 'Nhân Viên' : 'Admin'}`}>
-               {(!isCollapsed || isMobileOpen) ? (
-                  <>
-                    <span className="text-slate-500 opacity-80">(Dev Test) </span>
-                    Đóng vai {isAdmin ? 'Nhân Viên' : 'Chúa Tể'}
-                  </>
-               ) : (
-                  'Dev'
-               )}
-            </button>
-          </form>
+
         </div>
       </aside>
     </>
