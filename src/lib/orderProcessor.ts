@@ -26,12 +26,22 @@ export function calculateIncomeAndQuantities(lineItems: any[], ruleType: string,
          for (const rule of incomeRules) {
            if (rule.keyword && nameStr.includes(rule.keyword.toLowerCase())) {
              rate = Number(rule.price) || 0;
-             if (rule.keyword.toLowerCase().includes("pack 10")) {
-               hasPack10 = true;
-             }
              break; // Match first rule
            }
          }
+       }
+       
+       // Fallback thông minh: Nếu chưa có luật nào ăn khớp và tên sản phẩm có chứa "pack X", tự động lấy số X làm giá trị mồi
+       if (rate === 0) {
+         const matchPack = nameStr.match(/pack\s*(\d+)/i);
+         if (matchPack && matchPack[1]) {
+           rate = Number(matchPack[1]);
+         }
+       }
+       
+       // Độc lập kiểm tra VIP Tag
+       if (nameStr.includes("pack 10")) {
+         hasPack10 = true;
        }
        
        lineIncome = rate * qty;
