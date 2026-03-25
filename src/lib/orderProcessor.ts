@@ -31,11 +31,11 @@ export function calculateIncomeAndQuantities(lineItems: any[], ruleType: string,
          }
        }
        
-       // Fallback thông minh: Nếu chưa có luật nào ăn khớp và tên sản phẩm có chứa "pack X", tự động lấy số X làm giá trị mồi
+       // Fallback thông minh: Nếu chưa có luật nào ăn khớp và tên sản phẩm có chứa "pack X", tự động lấy số X * $5
        if (rate === 0) {
-         const matchPack = nameStr.match(/pack\s*(\d+)/i);
+         const matchPack = nameStr.match(/pack[-_\s]*(\d+)/i);
          if (matchPack && matchPack[1]) {
-           rate = Number(matchPack[1]);
+           rate = Number(matchPack[1]) * 5;
          } else {
            // Mặc định cho mọi thứ không nhặt được chữ "pack" nào đều có net income là 5$
            rate = 5;
