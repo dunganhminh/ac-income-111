@@ -51,6 +51,7 @@ export function calculateIncomeAndQuantities(lineItems: any[], ruleType: string,
 export async function processWooCommerceOrder(payload: any, projectId: string, projectSettings: any, suppressTelegram = false) {
   const { 
     id: wc_order_number,
+    number: custom_order_number,
     status = 'pending',
     billing = {},
     line_items = [],
@@ -68,9 +69,9 @@ export async function processWooCommerceOrder(payload: any, projectId: string, p
   const validStatuses = ['pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed', 'trash'];
   const finalStatus = validStatuses.includes(status) ? status : 'pending';
 
-  // Block failed orders to prevent spam/scam customers from filling up the CRM
-  if (finalStatus === 'failed') {
-    return { success: true, message: 'Ignored failed order to prevent spam' };
+  // Block failed and pending orders to prevent spam/unpaid customers from filling up the CRM
+  if (finalStatus === 'failed' || finalStatus === 'pending') {
+    return { success: true, message: `Ignored ${finalStatus} order to prevent spam` };
   }
 
   // PayPal fee
@@ -157,7 +158,7 @@ export async function processWooCommerceOrder(payload: any, projectId: string, p
   const orderData = {
     project_id: projectId,
     customer_id: customerId,
-    order_number: String(wc_order_number || Date.now()),
+    order_number: String(custom_order_number || wc_order_number || Date.now()),
     status: finalStatus,
     total_price: orderTotalFormatted,
     shipping_fee: Number(shipping_total),
