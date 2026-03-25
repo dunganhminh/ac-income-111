@@ -19,12 +19,24 @@ export async function POST(request: Request, props: { params: Promise<{ projectI
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
     
-    const body = await request.json();
     const action = request.headers.get('x-wc-webhook-topic') || '';
     
-    // Xử lý gói tin Ping (Thử nghiệm kết nối) khi bạn ấn Lưu Webhook trên WooCommerce
-    if (action.includes('webhook') || (body.webhook_id && !body.billing)) {
+    // Xử lý gói tin Ping (Thử nghiệm kết nối) ngay lập tức tránh lỗi JSON
+    if (action.includes('webhook') || action === 'action.woocommerce_api_create_webhook') {
       return NextResponse.json({ success: true, message: 'Webhook ping received successfully' });
+    }
+    
+    let body: any = {};
+    try {
+      const text = await request.text();
+      if (text) {
+         body = JSON.parse(text);
+      } else {
+         return NextResponse.json({ success: true, message: 'Empty body treated as ping' });
+      }
+    } catch (e: any) {
+      console.log('Webhook json parse error:', e.message);
+      return NextResponse.json({ success: true, message: 'Invalid json treated as ping' });
     }
     
     // Xử lý Xóa vĩnh viễn trên WooCommerce (ném vào thùng rác Soft Delete)
