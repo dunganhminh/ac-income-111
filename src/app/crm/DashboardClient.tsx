@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 
-export default function DashboardClient({ projects, orders, customers, expenses = [], isAdmin = true }: { projects: any[], orders: any[], customers: any[], expenses?: any[], isAdmin?: boolean }) {
+export default function DashboardClient({ projects, orders, customers, expenses = [], isAdmin = true, selectedProject }: { projects: any[], orders: any[], customers: any[], expenses?: any[], isAdmin?: boolean, selectedProject?: any }) {
   const [currency, setCurrency] = useState("AUD");
   const [rates, setRates] = useState({ vnd: 25500, aud: 1.5 });
 
@@ -22,9 +22,9 @@ export default function DashboardClient({ projects, orders, customers, expenses 
   }, []);
   
   const formatCurrency = (amountAUD: number) => {
-    if (currency === 'VND') return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amountAUD * (rates.vnd / rates.aud));
-    if (currency === 'USD') return `$${(amountAUD / rates.aud).toFixed(2)}`;
-    return `A$${amountAUD.toFixed(2)}`; // Mặc định hiển thị định dạng AUD
+    if (currency === 'VND') return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amountAUD * (rates.vnd / rates.aud)).replace('₫', 'VNĐ');
+    if (currency === 'USD') return `${(amountAUD / rates.aud).toFixed(2)} USD`;
+    return `${amountAUD.toFixed(2)} AUD`; // Mặc định hiển thị định dạng AUD ở hậu tố
   };
 
   // --- FILTER CORE DATA BY DATE ---
@@ -99,8 +99,17 @@ export default function DashboardClient({ projects, orders, customers, expenses 
       {/* 🌟 HEADER BOARD 🌟 */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4 shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{isAdmin ? "Trang Chủ (Global Dashboard)" : "Website Projects"}</h1>
-          <p className="text-sm text-slate-500 mt-1">{isAdmin ? "Tổng quan dòng tiền từ tất cả Hệ thống Website WooCommerce" : "Chọn Dự án bên dưới để bắt đầu làm việc"}</p>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+            {selectedProject ? (
+              <>
+                <LayoutDashboard className="w-6 h-6 text-blue-600" />
+                Dashboard: <span className="text-blue-600">{selectedProject.name}</span>
+              </>
+            ) : isAdmin ? "Trang Chủ (Global Dashboard)" : "Website Projects"}
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            {selectedProject ? `Quản trị dòng tiền chi tiết của dự án ${selectedProject.name}` : isAdmin ? "Tổng quan dòng tiền từ tất cả Hệ thống Website WooCommerce" : "Chọn Dự án bên dưới để bắt đầu làm việc"}
+          </p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
@@ -200,12 +209,29 @@ export default function DashboardClient({ projects, orders, customers, expenses 
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
               <LayoutDashboard className="w-5 h-5 text-slate-400" />
-              {isAdmin ? "Danh Sách Dự Án" : "Truy cập Dự Án"}
+              {selectedProject ? "Công Cụ Dự Án" : isAdmin ? "Danh Sách Dự Án" : "Truy cập Dự Án"}
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderingTopProjects.length > 0 ? renderingTopProjects.map((p, idx) => (
-                <Link href={`/crm/orders?project=${p.id}`} key={p.id} className="cursor-pointer block">
+              {selectedProject ? (
+                 <Link href={`/crm/orders?project=${selectedProject.id}`} className="cursor-pointer block">
+                    <div className="flex items-center justify-between p-4 rounded-xl border border-blue-100 bg-blue-50/50 hover:bg-white hover:border-blue-300 hover:shadow-md transition-all group h-full">
+                       <div className="flex items-center gap-4">
+                         <div className="w-10 h-10 rounded-full flex items-center justify-center font-black bg-blue-600 text-white">
+                           <ShoppingCart className="w-5 h-5" />
+                         </div>
+                         <div>
+                           <div className="font-bold text-slate-800 text-base group-hover:text-blue-600 transition-colors leading-tight mb-0.5">Quản Lý Đơn Hàng</div>
+                           <span className="text-[10px] text-blue-500 font-medium tracking-wider">XEM CHI TIẾT TỪNG ĐƠN</span>
+                         </div>
+                       </div>
+                       <div className="text-blue-600 pr-2">
+                         <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                       </div>
+                    </div>
+                 </Link>
+              ) : renderingTopProjects.length > 0 ? renderingTopProjects.map((p, idx) => (
+                <Link href={`/crm?project=${p.id}`} key={p.id} className="cursor-pointer block">
                   <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-300 hover:shadow-md transition-all group h-full">
                     <div className="flex items-center gap-4">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg ${isAdmin ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-600'}`}>

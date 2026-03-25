@@ -50,9 +50,9 @@ export default function ExpensesClient({ initialProjects, initialExpenses }: { i
   const totalUsdSpent = filteredExpenses.reduce((sum, e) => sum + Number(e.amount_usd), 0);
 
   const formatMoney = (amount: number, currency: string) => {
-    if (currency === 'VND') return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-    if (currency === 'AUD') return `A$${amount.toFixed(2)}`;
-    return `$${amount.toFixed(2)}`;
+    if (currency === 'VND') return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount).replace('₫', 'VNĐ');
+    if (currency === 'AUD') return `${amount.toFixed(2)} AUD`;
+    return `${amount.toFixed(2)} USD`;
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -155,7 +155,7 @@ export default function ExpensesClient({ initialProjects, initialExpenses }: { i
         
         <div className="bg-red-50 text-red-700 px-4 py-2.5 rounded-xl border border-red-100 flex items-center justify-between shadow-sm w-full md:w-auto">
           <div className="text-sm font-semibold text-red-600 uppercase tracking-widest mr-3">Tổng Chi:</div>
-          <div className="text-xl font-black">${totalUsdSpent.toFixed(2)} USD</div>
+          <div className="text-xl font-black">{totalUsdSpent.toFixed(2)} USD</div>
         </div>
       </div>
 
@@ -338,7 +338,7 @@ export default function ExpensesClient({ initialProjects, initialExpenses }: { i
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right bg-red-50/20">
-                        <span className="font-black text-red-600 text-base">-${Number(e.amount_usd).toFixed(2)}</span>
+                        <span className="font-black text-red-600 text-base">-{Number(e.amount_usd).toFixed(2)} USD</span>
                       </td>
                       <td className="px-5 py-4 text-center">
                          <button onClick={() => handleDelete(e.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
