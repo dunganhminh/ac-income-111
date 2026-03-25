@@ -36,6 +36,9 @@ export function calculateIncomeAndQuantities(lineItems: any[], ruleType: string,
          const matchPack = nameStr.match(/pack\s*(\d+)/i);
          if (matchPack && matchPack[1]) {
            rate = Number(matchPack[1]);
+         } else {
+           // Mặc định cho mọi thứ không nhặt được chữ "pack" nào đều có net income là 5$
+           rate = 5;
          }
        }
        
