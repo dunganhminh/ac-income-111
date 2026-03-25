@@ -20,26 +20,13 @@ export function calculateIncomeAndQuantities(lineItems: any[], ruleType: string,
        if (nameStr.includes("pack 10")) hasPack10 = true; // Still trigger tag
     } else {
        // ruleType === 'fixed_pack'
-       rate = 0; // Default if no rules match
        
-       if (incomeRules && incomeRules.length > 0) {
-         for (const rule of incomeRules) {
-           if (rule.keyword && nameStr.includes(rule.keyword.toLowerCase())) {
-             rate = Number(rule.price) || 0;
-             break; // Match first rule
-           }
-         }
-       }
-       
-       // Fallback thông minh: Nếu chưa có luật nào ăn khớp và tên sản phẩm có chứa "pack X", tự động lấy số X * $5
-       if (rate === 0) {
-         const matchPack = nameStr.match(/pack[-_\s]*(\d+)/i);
-         if (matchPack && matchPack[1]) {
-           rate = Number(matchPack[1]) * 5;
-         } else {
-           // Mặc định cho mọi thứ không nhặt được chữ "pack" nào đều có net income là 5$
-           rate = 5;
-         }
+       // Cơ chế tính cứng: Cứ thấy chữ "pack X" -> X * $5. Còn không thì mặc định là $5.
+       const matchPack = nameStr.match(/pack[-_\s]*(\d+)/i);
+       if (matchPack && matchPack[1]) {
+         rate = Number(matchPack[1]) * 5;
+       } else {
+         rate = 5;
        }
        
        // Độc lập kiểm tra VIP Tag

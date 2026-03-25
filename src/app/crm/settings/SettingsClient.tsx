@@ -647,58 +647,14 @@ export default function SettingsClient({ initialProjects, initialUsers }: { init
                 )}
                 {formData.income_rule_type === 'fixed_pack' && (
                   <div className="mt-1 bg-white border border-slate-200 rounded-lg p-3">
-                    <div className="flex justify-between items-center mb-2">
-                       <label className="block text-[11px] font-bold text-slate-500 uppercase">Danh Sách Nguồn Thu Cố Định</label>
-                       <button 
-                         type="button"
-                         onClick={() => setFormData({...formData, income_rules: [...formData.income_rules, {keyword: "", price: 0}]})}
-                         className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded font-bold transition-colors"
-                       >
-                         + Thêm Luật Tính Tiền
-                       </button>
-                    </div>
-                    <div className="space-y-2">
-                      {(!formData.income_rules || formData.income_rules.length === 0) && <div className="text-[10px] text-slate-400 italic">Chưa có quy tắc nào. Đơn hàng sẽ được tính $0 Net Income.</div>}
-                      {formData.income_rules && formData.income_rules.map((rule: any, idx: number) => (
-                         <div key={idx} className="flex items-center gap-2">
-                            <input 
-                              type="text" 
-                              value={rule.keyword}
-                              placeholder="Từ khóa (vd: pack 10)"
-                              onChange={(e) => {
-                                const newRules = [...formData.income_rules];
-                                newRules[idx].keyword = e.target.value;
-                                setFormData({...formData, income_rules: newRules});
-                              }}
-                              className="w-[50%] px-2 py-1.5 text-xs border border-slate-200 rounded focus:outline-blue-500"
-                            />
-                            <div className="relative w-[40%]">
-                              <span className="absolute left-2 top-1.5 text-xs text-slate-400">$</span>
-                              <input 
-                                type="number" 
-                                value={rule.price}
-                                placeholder="50"
-                                onChange={(e) => {
-                                  const newRules = [...formData.income_rules];
-                                  newRules[idx].price = Number(e.target.value);
-                                  setFormData({...formData, income_rules: newRules});
-                                }}
-                                className="w-full pl-5 pr-2 py-1.5 text-xs border border-slate-200 rounded focus:outline-blue-500"
-                              />
-                            </div>
-                            <button 
-                               type="button"
-                               onClick={() => {
-                                 const newRules = formData.income_rules.filter((_, i) => i !== idx);
-                                 setFormData({...formData, income_rules: newRules});
-                               }}
-                               className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded"
-                            >
-                               <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                         </div>
-                      ))}
-                    </div>
+                     <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded border border-blue-100 leading-relaxed font-medium">
+                       <strong>Cơ chế tính mặc định hệ thống:</strong>
+                       <ul className="list-disc pl-4 mt-1 space-y-0.5 opacity-90">
+                         <li>Sản phẩm có tên VD <em>"Pack 5"</em> ➔ Income = 5 x 5$ = <strong>$25</strong></li>
+                         <li>Sản phẩm có tên VD <em>"Pack 10"</em> ➔ Income = 10 x 5$ = <strong>$50</strong></li>
+                         <li>Sản phẩm <em>không</em> chứa từ khóa Pack ➔ Mặc định = <strong>$5</strong> / 1 SP</li>
+                       </ul>
+                     </div>
                   </div>
                 )}
               </div>
