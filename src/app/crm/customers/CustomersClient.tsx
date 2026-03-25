@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Filter, Copy, ExternalLink, CalendarClock, Download, Calendar } from "lucide-react";
+import { Search, Filter, Copy, ExternalLink, CalendarClock, Download, Calendar, Trash2, Loader2 } from "lucide-react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import * as ExcelJS from "exceljs";
 
@@ -17,8 +17,12 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
   // Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Local Data State so we can remove instantly without full reload
+  const [localCustomers, setLocalCustomers] = useState<any[]>(initialCustomers);
 
-  const filteredCustomers = initialCustomers.filter((c) => {
+  const filteredCustomers = localCustomers.filter((c) => {
     // Basic search
     const term = search.toLowerCase();
     const matchesSearch = 
@@ -117,6 +121,30 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
       alert("Lỗi khi xuất tệp: " + err);
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  // DELETE CUSTOMERS
+  const handleDelete = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn ${ids.length} khách hàng không? Hành động này không thể hoàn tác!`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const { deleteCustomersAction } = await import("./actions");
+      const res = await deleteCustomersAction(ids);
+      if (res.success) {
+        setLocalCustomers(prev => prev.filter(c => !ids.includes(c.id)));
+        setSelectedIds([]);
+      } else {
+        alert(res.error);
+      }
+    } catch (err: any) {
+      alert("Lỗi kết nối khi xóa: " + err.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -219,14 +247,27 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
             ))}
           </div>
 
-          <button 
-            onClick={handleExportExcel}
-            disabled={isExporting}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
-          >
-            {isExporting ? <Search className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Xuất Excel ({selectedIds.length})
-          </button>
+          <div className="flex items-center gap-2">
+            {selectedIds.length > 0 && (
+              <button 
+                onClick={() => handleDelete(selectedIds)}
+                disabled={isDeleting}
+                className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
+              >
+                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                Xóa ({selectedIds.length})
+              </button>
+            )}
+            
+            <button 
+              onClick={handleExportExcel}
+              disabled={isExporting}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
+            >
+              {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Xuất Excel
+            </button>
+          </div>
         </div>
       </div>
 
@@ -314,10 +355,12 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
                         {copiedId === c.id ? <span className="text-xs font-bold text-green-600 px-1">Copied!</span> : <Copy className="w-4 h-4" />}
                       </button>
                       <button 
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
-                        title="Xem tất cả đơn hàng"
+                        onClick={() => handleDelete([c.id])}
+                        disabled={isDeleting}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                        title="Xóa vĩnh viễn khách hàng này"
                       >
-                        <ExternalLink className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
