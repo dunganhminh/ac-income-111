@@ -203,7 +203,7 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
       {/* Header & Main Date Filter */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 shrink-0 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Hồ Sơ Khách Hàng (CRM)</h1>
+          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Hồ Sơ Khách Hàng</h1>
           <p className="text-sm text-slate-500 mt-1">{filteredCustomers.length} khách hàng trong bộ lọc này</p>
         </div>
         
@@ -343,7 +343,7 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
                     <span className="font-black text-slate-700 text-lg">{c.lifetime_orders}</span>
                   </td>
                   <td className="px-5 py-4 text-right">
-                    <span className="font-black text-indigo-600 text-lg">${Number(c.lifetime_spent).toFixed(2)}</span>
+                    <span className="font-black text-indigo-600 text-lg">{Number(c.lifetime_spent).toFixed(2)} AUD</span>
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-center gap-2">

@@ -99,9 +99,9 @@ function SidebarNavigationContent({ isAdmin, projects }: { isAdmin: boolean, pro
           </div>
           
           <div className="pb-1">
-            <Link onClick={() => setIsMobileOpen(false)} href={getHref("/crm/customers")} className={`flex items-center gap-3 py-2.5 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors font-bold group ${isCollapsed && !isMobileOpen ? 'justify-center px-0' : 'px-3'}`} title="Customers CRM">
+            <Link onClick={() => setIsMobileOpen(false)} href={getHref("/crm/customers")} className={`flex items-center gap-3 py-2.5 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors font-bold group ${isCollapsed && !isMobileOpen ? 'justify-center px-0' : 'px-3'}`} title="Khách Hàng">
               <div className="p-1.5 rounded bg-slate-100 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors"><Users className="w-4 h-4" /></div>
-              {(!isCollapsed || isMobileOpen) && <span className="flex-1">Customers CRM</span>}
+              {(!isCollapsed || isMobileOpen) && <span className="flex-1">Khách Hàng</span>}
             </Link>
           </div>
 
