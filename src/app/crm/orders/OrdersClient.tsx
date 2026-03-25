@@ -24,7 +24,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
   const filteredOrders = initialOrders.filter((o) => {
     // Basic search
     const term = search.toLowerCase();
-    const customer = o.customers || {};
+    const customer = o.customer || o.customers || {};
     const matchesSearch = 
       o.order_number.toLowerCase().includes(term) ||
       (customer.full_name && customer.full_name.toLowerCase().includes(term)) ||
@@ -109,7 +109,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
       sheet.columns = columns;
 
       ordersToExport.forEach(o => {
-        const customer = o.customers || {};
+        const customer = o.customer || o.customers || {};
         const productsStr = (o.products_summary || []).map((p:any) => `${p.quantity}x ${p.name}`).join(", ");
         const net = Number(o.total_price) - Number(o.paypal_fee);
         
@@ -300,7 +300,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
           </thead>
           <tbody className="divide-y divide-slate-100 text-sm">
             {filteredOrders.length > 0 ? filteredOrders.map((order) => {
-              const customer = order.customers || {};
+              const customer = order.customer || order.customers || {};
               const products = order.products_summary || [];
               const net = Number(order.total_price) - Number(order.paypal_fee);
               const isInvalid = ['cancelled', 'refunded', 'failed', 'trash'].includes(order.status);
