@@ -28,6 +28,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   const [ {data: orders, error: oErr}, {data: customers, error: cErr}, {data: expenses, error: exErr} ] = await Promise.all([oQuery, cQuery, exQuery]);
 
+  const { data: ratesSetting } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", "currency_rates")
+    .single();
+  const initialRates = ratesSetting?.value || { vnd: 25500, aud: 1.5 };
+
   if (pErr) console.error("Projects Error:", pErr);
   if (oErr) console.error("Orders Error:", oErr);
   if (cErr) console.error("Customers Error:", cErr);
@@ -42,5 +49,6 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             expenses={expenses || []} 
             isAdmin={isAdmin}
             selectedProject={selectedProject}
+            initialRates={initialRates}
           />;
 }

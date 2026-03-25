@@ -5,22 +5,16 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 
-export default function DashboardClient({ projects, orders, customers, expenses = [], isAdmin = true, selectedProject }: { projects: any[], orders: any[], customers: any[], expenses?: any[], isAdmin?: boolean, selectedProject?: any }) {
+export default function DashboardClient({ projects, orders, customers, expenses = [], isAdmin = true, selectedProject, initialRates }: { projects: any[], orders: any[], customers: any[], expenses?: any[], isAdmin?: boolean, selectedProject?: any, initialRates?: any }) {
   const [currency, setCurrency] = useState("AUD");
-  const [rates, setRates] = useState({ vnd: 25500, aud: 1.5 });
+  const [rates, setRates] = useState(initialRates || { vnd: 25500, aud: 1.5 });
 
   // Date Filter State
   const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'month' | 'year' | 'custom' | 'all'>('month');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  useEffect(() => {
-    const savedRates = localStorage.getItem("crm_currency_rates");
-    if (savedRates) {
-      try { setRates(JSON.parse(savedRates)); } catch(e){}
-    }
-  }, []);
-  
+
   const formatCurrency = (amountAUD: number) => {
     if (currency === 'VND') return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amountAUD * (rates.vnd / rates.aud)).replace('₫', 'VNĐ');
     if (currency === 'USD') return `${(amountAUD / rates.aud).toFixed(2)} USD`;

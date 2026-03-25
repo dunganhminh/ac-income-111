@@ -6,11 +6,13 @@ import { supabase } from "@/lib/supabase";
 import { saveProjectAction, deleteProjectAction } from "@/app/actions/projectActions";
 import { logoutAction } from "@/app/actions/roleActions";
 import { createUserAction, deleteUserAction, updateUserRoleAction } from "@/app/actions/userActions";
+import { saveRatesAction } from "@/app/actions/settingsActions";
 
-export default function SettingsClient({ initialProjects, initialUsers }: { initialProjects: any[], initialUsers: any[] }) {
+export default function SettingsClient({ initialProjects, initialUsers, initialRates }: { initialProjects: any[], initialUsers: any[], initialRates: any }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [rates, setRates] = useState({ vnd: 25500, aud: 1.5 });
+  const [rates, setRates] = useState(initialRates || { vnd: 25500, aud: 1.5 });
   const [saveStatus, setSaveStatus] = useState("");
+  const [isSavingRates, setIsSavingRates] = useState(false);
   
   const [usersList, setUsersList] = useState<any[]>(initialUsers);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -52,11 +54,8 @@ export default function SettingsClient({ initialProjects, initialUsers }: { init
   }, [initialUsers]);
 
   useEffect(() => {
-    const savedRates = localStorage.getItem("crm_currency_rates");
-    if (savedRates) {
-      try { setRates(JSON.parse(savedRates)); } catch(e){}
-    }
-  }, []);
+    setUsersList(initialUsers);
+  }, [initialUsers]);
 
   const handleCreateUser = async () => {
     if (!userFormData.username || !userFormData.password) {
@@ -102,10 +101,16 @@ export default function SettingsClient({ initialProjects, initialUsers }: { init
     }
   };
 
-  const handleSaveRates = () => {
-    localStorage.setItem("crm_currency_rates", JSON.stringify(rates));
-    setSaveStatus("Đã lưu tỷ giá!");
-    setTimeout(() => setSaveStatus(""), 2000);
+  const handleSaveRates = async () => {
+    setIsSavingRates(true);
+    const res = await saveRatesAction(rates);
+    setIsSavingRates(false);
+    if (res.success) {
+      setSaveStatus("Đã đồng bộ lên Cloud!");
+    } else {
+      setSaveStatus(`Lỗi: ${res.error}`);
+    }
+    setTimeout(() => setSaveStatus(""), 3000);
   };
 
   const copyUrl = (id: string, url: string) => {
@@ -350,9 +355,10 @@ export default function SettingsClient({ initialProjects, initialUsers }: { init
               {saveStatus && <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">{saveStatus}</span>}
               <button 
                 onClick={handleSaveRates}
-                className="text-xs text-white font-bold bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg shadow-sm transition-colors"
+                disabled={isSavingRates}
+                className="text-xs text-white font-bold bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-4 py-2 rounded-lg shadow-sm transition-colors"
               >
-                Lưu Tỷ Giá
+                {isSavingRates ? "Đang đồng bộ..." : "Lưu Tỷ Giá"}
               </button>
             </div>
           </div>

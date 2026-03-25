@@ -23,8 +23,16 @@ export default async function SettingsPage() {
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
+  const { data: ratesSetting } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", "currency_rates")
+    .single();
+
+  const initialRates = ratesSetting?.value || { vnd: 25500, aud: 1.5 };
+
   if (pErr) console.error("Projects Error:", pErr);
   if (uErr) console.error("Users Error:", uErr);
 
-  return <SettingsClient initialProjects={projects || []} initialUsers={users || []} />;
+  return <SettingsClient initialProjects={projects || []} initialUsers={users || []} initialRates={initialRates} />;
 }
