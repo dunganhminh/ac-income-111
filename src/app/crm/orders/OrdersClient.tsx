@@ -98,13 +98,13 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
         { header: "Customer Email", key: "customer_email", width: 25 },
         { header: "Products", key: "products", width: 40 },
         { header: "Status", key: "status", width: 15 },
-        { header: "Total Price ($)", key: "total_price", width: 15 },
-        { header: "PayPal Fee ($)", key: "paypal_fee", width: 15 }
+        { header: "Total Price (A$)", key: "total_price", width: 15 },
+        { header: "PayPal Fee (A$)", key: "paypal_fee", width: 15 }
       ];
 
       if (isAdmin) {
-        columns.push({ header: "Net Rev ($)", key: "net_rev", width: 15 });
-        columns.push({ header: "Income ($)", key: "income", width: 15 });
+        columns.push({ header: "Net Rev (A$)", key: "net_rev", width: 15 });
+        columns.push({ header: "Income (A$)", key: "income", width: 15 });
       }
 
       sheet.columns = columns;
@@ -330,7 +330,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
                       {products.map((p: any, i: number) => (
                         <div key={i} className="text-[12px] text-slate-700 leading-tight">
                           <span className="font-semibold">{p.quantity}x</span> {p.name || "Unknown Product"} 
-                          {!focusMode && <span className="text-slate-400 ml-1">(${p.line_income})</span>}
+                          {!focusMode && <span className="text-slate-400 ml-1">(A${p.line_income})</span>}
                         </div>
                       ))}
                     </div>
@@ -346,14 +346,14 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
                   
                   {!focusMode && (
                     <>
-                      <td className="px-5 py-3 text-right font-medium text-slate-700">${Number(order.total_price).toFixed(2)}</td>
-                      <td className="px-5 py-3 text-right font-medium text-red-500">-${Number(order.paypal_fee).toFixed(2)}</td>
+                      <td className="px-5 py-3 text-right font-medium text-slate-700">A${Number(order.total_price).toFixed(2)}</td>
+                      <td className="px-5 py-3 text-right font-medium text-red-500">-A${Number(order.paypal_fee).toFixed(2)}</td>
                       {isAdmin && (
                          <>
-                           <td className="px-5 py-3 text-right font-bold text-slate-800">${net.toFixed(2)}</td>
+                           <td className="px-5 py-3 text-right font-bold text-slate-800">A${net.toFixed(2)}</td>
                            <td className="px-5 py-3 text-right">
                              <span className="inline-block bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-bold border border-blue-100">
-                               ${(Number(order.total_income) + Number(order.manual_adjustment)).toFixed(2)}
+                               A${(Number(order.total_income) + Number(order.manual_adjustment)).toFixed(2)}
                              </span>
                            </td>
                          </>
@@ -384,12 +384,12 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
               
               {!focusMode && (
                 <>
-                  <td className="px-5 py-4 text-right font-bold border-t border-slate-700">${totalGross.toFixed(2)}</td>
-                  <td className="px-5 py-4 text-right font-bold text-red-300 border-t border-slate-700">-${totalFees.toFixed(2)}</td>
+                  <td className="px-5 py-4 text-right font-bold border-t border-slate-700">A${totalGross.toFixed(2)}</td>
+                  <td className="px-5 py-4 text-right font-bold text-red-300 border-t border-slate-700">-A${totalFees.toFixed(2)}</td>
                   {isAdmin && (
                      <>
-                        <td className="px-5 py-4 text-right font-bold text-green-300 border-t border-slate-700">${totalNet.toFixed(2)}</td>
-                        <td className="px-5 py-4 text-right text-lg font-black text-blue-300 rounded-br-xl border-t border-slate-700">${totalIncome.toFixed(2)}</td>
+                        <td className="px-5 py-4 text-right font-bold text-green-300 border-t border-slate-700">A${totalNet.toFixed(2)}</td>
+                        <td className="px-5 py-4 text-right text-lg font-black text-blue-300 rounded-br-xl border-t border-slate-700">A${totalIncome.toFixed(2)}</td>
                      </>
                   )}
                   {!isAdmin && <td className="rounded-br-xl border-t border-slate-700"></td>}

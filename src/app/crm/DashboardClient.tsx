@@ -21,10 +21,10 @@ export default function DashboardClient({ projects, orders, customers, expenses 
     }
   }, []);
   
-  const formatCurrency = (amountUSD: number) => {
-    if (currency === 'VND') return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amountUSD * rates.vnd);
-    if (currency === 'AUD') return `A$${(amountUSD * rates.aud).toFixed(2)}`;
-    return `$${amountUSD.toFixed(2)}`;
+  const formatCurrency = (amountAUD: number) => {
+    if (currency === 'VND') return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amountAUD * (rates.vnd / rates.aud));
+    if (currency === 'USD') return `$${(amountAUD / rates.aud).toFixed(2)}`;
+    return `A$${amountAUD.toFixed(2)}`; // Mặc định hiển thị định dạng AUD
   };
 
   // --- FILTER CORE DATA BY DATE ---
@@ -57,7 +57,7 @@ export default function DashboardClient({ projects, orders, customers, expenses 
   // 1. Calculate Top Metrics
   const totalIncome = filteredOrders.reduce((sum, o) => sum + Number(o.total_income) + Number(o.manual_adjustment), 0);
   const totalNetRevenue = filteredOrders.reduce((sum, o) => sum + (Number(o.total_price) - Number(o.paypal_fee) - Number(o.shipping_fee || 0)), 0);
-  const totalExpenses = filteredExpenses.reduce((sum, e) => sum + Number(e.amount_usd), 0);
+  const totalExpenses = filteredExpenses.reduce((sum, e) => sum + (Number(e.amount_usd) * rates.aud), 0); // Convert USD expense to AUD to match Income baseline
   const netProfit = totalIncome - totalExpenses;
   const totalOrders = filteredOrders.length;
   
