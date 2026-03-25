@@ -150,7 +150,7 @@ export default function ExpensesClient({ initialProjects, initialExpenses }: { i
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
             <TrendingDown className="w-6 h-6 text-red-500" /> Quản Lý Chi Phí (Expenses)
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Ads, Entity, Server... Trừ trực tiếp vào Income tạo Lợi nhuận ròng.</p>
+          <p className="text-sm text-slate-500 mt-1">Các chi phí đã chi</p>
         </div>
         
         <div className="bg-red-50 text-red-700 px-4 py-2.5 rounded-xl border border-red-100 flex items-center justify-between shadow-sm w-full md:w-auto">
