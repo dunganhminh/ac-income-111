@@ -22,6 +22,11 @@ export async function POST(request: Request, props: { params: Promise<{ projectI
     const body = await request.json();
     const action = request.headers.get('x-wc-webhook-topic') || '';
     
+    // Xử lý gói tin Ping (Thử nghiệm kết nối) khi bạn ấn Lưu Webhook trên WooCommerce
+    if (action.includes('webhook') || (body.webhook_id && !body.billing)) {
+      return NextResponse.json({ success: true, message: 'Webhook ping received successfully' });
+    }
+    
     // Xử lý Xóa vĩnh viễn trên WooCommerce (ném vào thùng rác Soft Delete)
     if (action === 'order.deleted') {
       const wooOrderId = String(body.id || '');
@@ -41,12 +46,13 @@ export async function POST(request: Request, props: { params: Promise<{ projectI
     const isUpdate = action === 'order.updated';
     const suppressTelegram = isUpdate; 
 
-    if (body.id) {
+    // Chỉ process khi body có ID và là dữ liệu Order thực sự
+    if (body.id && body.status) {
        await processWooCommerceOrder(body, projectId, project, suppressTelegram);
        return NextResponse.json({ success: true, order_id: body.id });
     }
 
-    return NextResponse.json({ success: false, message: 'Unknown webhook payload' });
+    return NextResponse.json({ success: true, message: 'Ignored payload' });
 
   } catch (error: any) {
     console.error('Webhook processing error:', error);
