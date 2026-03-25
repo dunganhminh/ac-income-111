@@ -29,6 +29,19 @@ export async function POST(req: Request) {
     const authHeader = 'Basic ' + Buffer.from(`${project.woo_consumer_key}:${project.woo_consumer_secret}`).toString('base64');
     const baseUrl = project.website_url.replace(/\/$/, "");
 
+    // 2. Delete existing orders in the current sync range to PREVENT DUPLICATES!
+    // Since we changed from wc_order_id to custom_order_number, old orders were sticking around and creating dupes
+    const { error: deleteError } = await supabase
+      .from('orders')
+      .delete()
+      .eq('project_id', projectId)
+      .gte('created_at', `${startDate}T00:00:00Z`)
+      .lte('created_at', `${endDate}T23:59:59Z`);
+
+    if (deleteError) {
+      console.error("Warning: Failed to delete old orders before sync:", deleteError);
+    }
+
     let allOrders: any[] = [];
     let page = 1;
     let hasMore = true;
