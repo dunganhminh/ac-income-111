@@ -10,7 +10,7 @@ export default function DashboardClient({ projects, orders, customers, expenses 
   const [rates, setRates] = useState({ vnd: 25500, aud: 1.5 });
 
   // Date Filter State
-  const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'month' | 'year' | 'custom' | 'all'>('today');
+  const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'month' | 'year' | 'custom' | 'all'>('month');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -56,7 +56,7 @@ export default function DashboardClient({ projects, orders, customers, expenses 
   
   // 1. Calculate Top Metrics
   const totalIncome = filteredOrders.reduce((sum, o) => sum + Number(o.total_income) + Number(o.manual_adjustment), 0);
-  const totalNetRevenue = filteredOrders.reduce((sum, o) => sum + (Number(o.total_price) - Number(o.paypal_fee)), 0);
+  const totalNetRevenue = filteredOrders.reduce((sum, o) => sum + (Number(o.total_price) - Number(o.paypal_fee) - Number(o.shipping_fee || 0)), 0);
   const totalExpenses = filteredExpenses.reduce((sum, e) => sum + Number(e.amount_usd), 0);
   const netProfit = totalIncome - totalExpenses;
   const totalOrders = filteredOrders.length;

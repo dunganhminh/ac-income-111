@@ -52,7 +52,8 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
   const validOrders = filteredOrders.filter(o => !['cancelled', 'refunded', 'failed', 'trash'].includes(o.status));
   const totalGross = validOrders.reduce((sum, o) => sum + Number(o.total_price), 0);
   const totalFees = validOrders.reduce((sum, o) => sum + Number(o.paypal_fee), 0);
-  const totalNet = totalGross - totalFees;
+  const totalShipping = validOrders.reduce((sum, o) => sum + Number(o.shipping_fee || 0), 0);
+  const totalNet = totalGross - totalFees - totalShipping;
   const totalIncome = validOrders.reduce((sum, o) => sum + Number(o.total_income) + Number(o.manual_adjustment), 0);
   
   let totalQty = 0;
@@ -111,7 +112,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
       ordersToExport.forEach(o => {
         const customer = o.customer || o.customers || {};
         const productsStr = (o.products_summary || []).map((p:any) => `${p.quantity}x ${p.name}`).join(", ");
-        const net = Number(o.total_price) - Number(o.paypal_fee);
+        const net = Number(o.total_price) - Number(o.paypal_fee) - Number(o.shipping_fee || 0);
         
         const rowData: any = {
           order_number: o.order_number,
@@ -302,7 +303,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
             {filteredOrders.length > 0 ? filteredOrders.map((order) => {
               const customer = order.customer || order.customers || {};
               const products = order.products_summary || [];
-              const net = Number(order.total_price) - Number(order.paypal_fee);
+              const net = Number(order.total_price) - Number(order.paypal_fee) - Number(order.shipping_fee || 0);
               const isInvalid = ['cancelled', 'refunded', 'failed', 'trash'].includes(order.status);
               const isSelected = selectedIds.includes(order.id);
               
