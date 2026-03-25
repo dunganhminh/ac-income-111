@@ -74,10 +74,33 @@ export async function processWooCommerceOrder(payload: any, projectId: string, p
     return { success: true, message: `Ignored ${finalStatus} order to prevent spam` };
   }
 
-  // PayPal fee
+  // PayPal/Gateway fee calculation
   let paypalFee = 0;
+  
+  // 1. Try finding in `fee_lines` 
   const ppFeeLine = fee_lines.find((fee: any) => fee.name && fee.name.toLowerCase().includes('paypal'));
-  if (ppFeeLine) paypalFee = Math.abs(Number(ppFeeLine.total));
+  if (ppFeeLine) {
+    paypalFee = Math.abs(Number(ppFeeLine.total));
+  } else if (payload.meta_data && Array.isArray(payload.meta_data)) {
+    // 2. Try finding in `meta_data` (Most plugins store fees here like `_paypal_transaction_fee`, `_stripe_fee`)
+    const feeMetaKeys = [
+      '_paypal_transaction_fee', 
+      'PayPal Transaction Fee', 
+      '_ppcp_paypal_fee',
+      '_paypal_fee', 
+      'paypal_fee',
+      '_stripe_fee',
+      'stripe_fee'
+    ];
+    const metaFee = payload.meta_data.find((meta: any) => feeMetaKeys.includes(meta.key));
+    if (metaFee && metaFee.value) {
+      // metaFee.value can be string or number
+      const parsedFee = parseFloat(String(metaFee.value).replace(/[^0-9.-]+/g,""));
+      if (!isNaN(parsedFee)) {
+        paypalFee = Math.abs(parsedFee);
+      }
+    }
+  }
 
   // UTM Tracking extraction from order metadata
   const metaData = payload.meta_data || [];
