@@ -68,6 +68,11 @@ export async function processWooCommerceOrder(payload: any, projectId: string, p
   const validStatuses = ['pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed', 'trash'];
   const finalStatus = validStatuses.includes(status) ? status : 'pending';
 
+  // Block failed orders to prevent spam/scam customers from filling up the CRM
+  if (finalStatus === 'failed') {
+    return { success: true, message: 'Ignored failed order to prevent spam' };
+  }
+
   // PayPal fee
   let paypalFee = 0;
   const ppFeeLine = fee_lines.find((fee: any) => fee.name && fee.name.toLowerCase().includes('paypal'));
