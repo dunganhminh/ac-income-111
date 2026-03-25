@@ -36,7 +36,12 @@ export async function loginAction(formData: FormData) {
     .is("deleted_at", null) // Không cho đăng nhập tài khoản đã bị xoá
     .single();
 
-  if (error || !user) {
+  if (error) {
+    console.error("Supabase Auth Error:", error);
+    return { success: false, error: `Lỗi kết nối DB: ${error.message} (Kiểm tra lại SERVICE_ROLE_KEY)` };
+  }
+  
+  if (!user) {
     return { success: false, error: "Tài khoản không tồn tại." };
   }
 
