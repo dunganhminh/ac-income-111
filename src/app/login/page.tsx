@@ -41,7 +41,7 @@ export default function LoginPage() {
           <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg mb-5">
             <Hexagon className="w-8 h-8 fill-current" />
           </div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Income Platform</h1>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Dũng Lucky Team</h1>
           <p className="text-sm text-slate-500 mt-1.5 font-medium">Bảo mật hệ thống nội bộ</p>
         </div>
 
@@ -101,7 +101,7 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-8 pt-5 border-t border-slate-100/80 text-center text-[11px] text-slate-400 font-semibold tracking-wide">
-          Protected by AntiGravity Platform
+          Được tạo bởi Dũng Lucky
         </div>
       </div>
     </div>

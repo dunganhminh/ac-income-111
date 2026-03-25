@@ -84,8 +84,8 @@ function SidebarNavigationContent({ isAdmin, projects }: { isAdmin: boolean, pro
         <nav className={`flex-1 overflow-y-auto mt-4 space-y-2 ${isCollapsed && !isMobileOpen ? 'px-2' : 'px-4'}`}>
           {isAdmin && (
             <div className="pb-1">
-              <Link onClick={() => setIsMobileOpen(false)} href="/crm" className={`flex items-center gap-3 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors font-medium group ${isCollapsed && !isMobileOpen ? 'justify-center px-0' : 'px-3'}`} title="Dashboard Global">
-                <div className="p-1.5 rounded bg-slate-50 group-hover:bg-slate-200 transition-colors"><LayoutDashboard className="w-4 h-4" /></div>
+              <Link onClick={() => setIsMobileOpen(false)} href="/crm" className={`flex items-center gap-3 py-2.5 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors font-bold group ${isCollapsed && !isMobileOpen ? 'justify-center px-0' : 'px-3'}`} title="Dashboard Global">
+                <div className="p-1.5 rounded bg-slate-100 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors"><LayoutDashboard className="w-4 h-4" /></div>
                 {(!isCollapsed || isMobileOpen) && <span>{projectId ? "Dashboard Global" : "Dashboard Tổng"}</span>}
               </Link>
             </div>
@@ -108,22 +108,22 @@ function SidebarNavigationContent({ isAdmin, projects }: { isAdmin: boolean, pro
           {isAdmin && (
             <>
               <div className="pb-1">
-                <Link onClick={() => setIsMobileOpen(false)} href={getHref("/crm/expenses")} className={`flex items-center gap-3 py-2.5 text-slate-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors font-bold group ${isCollapsed && !isMobileOpen ? 'justify-center px-0' : 'px-3'}`} title="Quản Lý Chi Phí">
-                  <div className="p-1.5 rounded bg-slate-100 group-hover:bg-red-100 group-hover:text-red-600 transition-colors"><TrendingDown className="w-4 h-4" /></div>
+                <Link onClick={() => setIsMobileOpen(false)} href={getHref("/crm/expenses")} className={`flex items-center gap-3 py-2.5 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors font-bold group ${isCollapsed && !isMobileOpen ? 'justify-center px-0' : 'px-3'}`} title="Quản Lý Chi Phí">
+                  <div className="p-1.5 rounded bg-slate-100 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors"><TrendingDown className="w-4 h-4" /></div>
                   {(!isCollapsed || isMobileOpen) && <span className="flex-1">Quản Lý Chi Phí</span>}
                 </Link>
               </div>
               
               <div className="pb-1">
-                <Link onClick={() => setIsMobileOpen(false)} href={getHref("/crm/analytics")} className={`flex items-center gap-3 py-2.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-colors font-bold group ${isCollapsed && !isMobileOpen ? 'justify-center px-0' : 'px-3'}`} title="Analytics">
-                  <div className="p-1.5 rounded bg-slate-100 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors"><Activity className="w-4 h-4" /></div>
+                <Link onClick={() => setIsMobileOpen(false)} href={getHref("/crm/analytics")} className={`flex items-center gap-3 py-2.5 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors font-bold group ${isCollapsed && !isMobileOpen ? 'justify-center px-0' : 'px-3'}`} title="Analytics">
+                  <div className="p-1.5 rounded bg-slate-100 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors"><Activity className="w-4 h-4" /></div>
                   {(!isCollapsed || isMobileOpen) && <span className="flex-1">Analytics</span>}
                 </Link>
               </div>
               
               <div className="pb-1">
-                <Link onClick={() => setIsMobileOpen(false)} href={getHref("/crm/settings")} className={`flex items-center gap-3 py-2.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors font-bold group ${isCollapsed && !isMobileOpen ? 'justify-center px-0' : 'px-3'}`} title="Settings">
-                  <div className="p-1.5 rounded bg-slate-100 group-hover:bg-slate-200 transition-colors"><Settings className="w-4 h-4" /></div>
+                <Link onClick={() => setIsMobileOpen(false)} href={getHref("/crm/settings")} className={`flex items-center gap-3 py-2.5 text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors font-bold group ${isCollapsed && !isMobileOpen ? 'justify-center px-0' : 'px-3'}`} title="Settings">
+                  <div className="p-1.5 rounded bg-slate-100 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors"><Settings className="w-4 h-4" /></div>
                   {(!isCollapsed || isMobileOpen) && <span className="flex-1">Settings</span>}
                 </Link>
               </div>
