@@ -99,7 +99,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
         { header: "Products", key: "products", width: 40 },
         { header: "Status", key: "status", width: 15 },
         { header: "Total Price (A$)", key: "total_price", width: 15 },
-        { header: "PayPal Fee (A$)", key: "paypal_fee", width: 15 }
+        { header: "Project Store", key: "project_name", width: 20 }
       ];
 
       if (isAdmin) {
@@ -122,7 +122,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
           products: productsStr,
           status: o.status,
           total_price: Number(o.total_price),
-          paypal_fee: Number(o.paypal_fee)
+          project_name: initialProjects?.find(p => p.id === o.project_id)?.name || "Unknown"
         };
 
         if (isAdmin) {
@@ -288,7 +288,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
               {!focusMode && (
                 <>
                   <th className="px-5 py-4 text-right">Total Price</th>
-                  <th className="px-5 py-4 text-right">PayPal Fee</th>
+                  <th className="px-5 py-4 text-center">Dự Án</th>
                   {isAdmin && (
                     <>
                       <th className="px-5 py-4 text-right">Net Rev</th>
@@ -347,7 +347,11 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
                   {!focusMode && (
                     <>
                       <td className="px-5 py-3 text-right font-medium text-slate-700">{Number(order.total_price).toFixed(2)} AUD</td>
-                      <td className="px-5 py-3 text-right font-medium text-red-500">-{Number(order.paypal_fee).toFixed(2)} AUD</td>
+                      <td className="px-5 py-3 text-center">
+                        <span className="inline-block px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[11px] font-bold border border-indigo-100 min-w-[80px] truncate max-w-[120px]" title={initialProjects?.find(p => p.id === order.project_id)?.name}>
+                          {initialProjects?.find(p => p.id === order.project_id)?.name || "Unknown"}
+                        </span>
+                      </td>
                       {isAdmin && (
                          <>
                            <td className="px-5 py-3 text-right font-bold text-slate-800">{net.toFixed(2)} AUD</td>
@@ -385,7 +389,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
               {!focusMode && (
                 <>
                   <td className="px-5 py-4 text-right font-bold border-t border-slate-700">{totalGross.toFixed(2)} AUD</td>
-                  <td className="px-5 py-4 text-right font-bold text-red-300 border-t border-slate-700">-{totalFees.toFixed(2)} AUD</td>
+                  <td className="px-5 py-4 border-t border-slate-700 text-center">-</td>
                   {isAdmin && (
                      <>
                         <td className="px-5 py-4 text-right font-bold text-green-300 border-t border-slate-700">{totalNet.toFixed(2)} AUD</td>
