@@ -11,7 +11,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
     .from("customers")
     .select(`*`)
     .is("deleted_at", null)
-    .order("lifetime_spent", { ascending: false });
+    .order("lifetime_spent", { ascending: false })
+    .limit(100000);
 
   if (projectId) {
     query = query.eq("project_id", projectId);

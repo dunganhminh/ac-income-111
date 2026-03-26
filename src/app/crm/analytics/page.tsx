@@ -19,7 +19,8 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   let query = supabase
     .from("orders")
     .select("*")
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    .limit(100000);
 
   if (projectId) {
     query = query.eq("project_id", projectId);
@@ -29,14 +30,15 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   let expensesQuery = supabase
     .from("expenses")
     .select("*")
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    .limit(100000);
 
   if (projectId) {
     expensesQuery = expensesQuery.eq("project_id", projectId);
   }
   const { data: expenses } = await expensesQuery;
 
-  let custQuery = supabase.from("customers").select("*");
+  let custQuery = supabase.from("customers").select("*").limit(100000);
   if (projectId) custQuery = custQuery.eq("project_id", projectId);
   const { data: customers } = await custQuery;
 

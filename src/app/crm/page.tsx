@@ -15,10 +15,22 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   // Fetch overarching context data for all projects
   const { data: projects, error: pErr } = await supabase.from('projects').select('*').is('deleted_at', null);
   
-  // Queries
-  let oQuery = supabase.from('orders').select('*').is('deleted_at', null).not('status', 'in', '("cancelled","refunded","failed","trash")');
-  let cQuery = supabase.from('customers').select('*').is('deleted_at', null);
-  let exQuery = supabase.from('expenses').select('*').is('deleted_at', null);
+  // Queries (Optimized for Maximum 100k rows with specific tiny columns to save Vercel RAM)
+  let oQuery = supabase.from('orders')
+    .select('id, project_id, status, total_price, shipping_fee, paypal_fee, total_income, manual_adjustment, created_at')
+    .is('deleted_at', null)
+    .not('status', 'in', '("cancelled","refunded","failed","trash")')
+    .limit(100000);
+    
+  let cQuery = supabase.from('customers')
+    .select('id, project_id, lifetime_orders, last_order_date')
+    .is('deleted_at', null)
+    .limit(100000);
+    
+  let exQuery = supabase.from('expenses')
+    .select('id, project_id, amount_usd, expense_date, created_at')
+    .is('deleted_at', null)
+    .limit(100000);
 
   if (projectId) {
     oQuery = oQuery.eq('project_id', projectId);

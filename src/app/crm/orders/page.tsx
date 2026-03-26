@@ -12,7 +12,8 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
     .from("orders")
     .select("*, customer:customer_id (full_name, email, phone)")
     .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100000);
 
   if (projectId) {
     query = query.eq("project_id", projectId);
