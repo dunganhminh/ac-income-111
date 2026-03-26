@@ -125,38 +125,24 @@ export async function processWooCommerceOrder(payload: any, projectId: string, p
   const orderDate = date_created || new Date().toISOString();
   const orderTotalFormatted = Number(total);
 
-  // CRM UPSERT & AUTO-TAGGING
+  // CRM: FIND OR CREATE CUSTOMER
   let customerId = null;
+  let existingCustomerTags: string[] = [];
+  
   let { data: existingCustomer } = await supabase
     .from('customers')
-    .select('id, lifetime_orders, lifetime_spent, tags')
+    .select('id, tags')
     .eq('project_id', projectId)
     .eq('email', email)
     .single();
 
   if (existingCustomer) {
-    const newLifetime = existingCustomer.lifetime_orders + 1;
-    const newLifetimeSpent = Number(existingCustomer.lifetime_spent || 0) + orderTotalFormatted;
-    let tags: string[] = existingCustomer.tags || [];
-    
-    // Auto-tagging Rules
-    if (newLifetime >= 5 && !tags.includes('VIP')) tags.push('VIP');
-    if (hasPack10 && !tags.includes('Pack 10 Lover')) tags.push('Pack 10 Lover');
-
-    await supabase
-      .from('customers')
-      .update({ 
-        lifetime_orders: newLifetime,
-        lifetime_spent: newLifetimeSpent,
-        last_order_date: orderDate,
-        tags: tags
-      })
-      .eq('id', existingCustomer.id);
-    
     customerId = existingCustomer.id;
+    existingCustomerTags = existingCustomer.tags || [];
   } else {
-    let tags: string[] = ['Khách mới']; // Auto-tag new customer
-    if (hasPack10) tags.push('Pack 10 Lover');
+    // Insert initial empty customer
+    let initialTags: string[] = ['Khách mới']; 
+    if (hasPack10) initialTags.push('Pack 10 Lover');
 
     const { data: newCustomer, error: insertCustomerError } = await supabase
       .from('customers')
@@ -165,16 +151,16 @@ export async function processWooCommerceOrder(payload: any, projectId: string, p
         email: email,
         phone: phone,
         full_name: customerName,
-        lifetime_orders: 1,
-        lifetime_spent: orderTotalFormatted,
-        last_order_date: orderDate,
-        tags: tags
+        lifetime_orders: 0,
+        lifetime_spent: 0,
+        tags: initialTags
       }])
       .select('id')
       .single();
       
     if (insertCustomerError) throw new Error("Customer Insert Error: " + insertCustomerError.message);
     customerId = newCustomer.id;
+    existingCustomerTags = initialTags;
   }
 
   // ORDER UPSERT
@@ -200,6 +186,44 @@ export async function processWooCommerceOrder(payload: any, projectId: string, p
     .upsert(orderData, { onConflict: 'project_id, order_number' });
 
   if (orderError) throw new Error("Order Insert Error: " + orderError.message);
+
+  // CRM: RECALCULATE EXACT LIFETIME METRICS (Prevents Duplicates on Webhook Retries or Sync)
+  const { data: customerOrders } = await supabase
+    .from('orders')
+    .select('total_price, status, created_at')
+    .eq('customer_id', customerId)
+    .is('deleted_at', null)
+    .not('status', 'in', '("cancelled","refunded","failed","trash")');
+
+  let recalculatedSpent = 0;
+  let recalculatedOrders = 0;
+  let latestOrderDate = orderDate;
+  
+  if (customerOrders && customerOrders.length > 0) {
+    recalculatedOrders = customerOrders.length;
+    recalculatedSpent = customerOrders.reduce((sum, o) => sum + Number(o.total_price), 0);
+    
+    // Find the latest valid order date
+    const sortedDates = customerOrders.map(o => new Date(o.created_at).getTime()).sort((a, b) => b - a);
+    if (sortedDates.length > 0) {
+      latestOrderDate = new Date(sortedDates[0]).toISOString();
+    }
+  }
+
+  // Update Customer Tags
+  let tags: string[] = [...existingCustomerTags];
+  if (recalculatedOrders >= 5 && !tags.includes('VIP')) tags.push('VIP');
+  if (hasPack10 && !tags.includes('Pack 10 Lover')) tags.push('Pack 10 Lover');
+
+  await supabase
+    .from('customers')
+    .update({ 
+      lifetime_orders: recalculatedOrders,
+      lifetime_spent: recalculatedSpent,
+      last_order_date: latestOrderDate,
+      tags: tags
+    })
+    .eq('id', customerId);
 
   // TELEGRAM ALERT
   if (!suppressTelegram && projectSettings.telegram_active && projectSettings.telegram_chat_id) {
