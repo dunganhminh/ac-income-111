@@ -42,11 +42,11 @@ export async function loginAction(formData: FormData) {
   }
   
   if (!user) {
-    return { success: false, error: "Tài khoản không tồn tại." };
+    return { success: false, error: "Lỗi sai tài khoản hoặc mật khẩu, vui lòng liên hệ với admin" };
   }
 
   if (user.password_hash !== hash) {
-    return { success: false, error: "Mật khẩu không chính xác." };
+    return { success: false, error: "Lỗi sai tài khoản hoặc mật khẩu, vui lòng liên hệ với admin" };
   }
 
   const cookieStore = await cookies();
