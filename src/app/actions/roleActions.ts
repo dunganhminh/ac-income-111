@@ -1,6 +1,7 @@
 "use server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function setRole(role: string) {
   const cookieStore = await cookies();
@@ -13,4 +14,5 @@ export async function logoutAction() {
   cookieStore.delete("crm_role");
   cookieStore.delete("crm_user_id");
   revalidatePath("/");
+  redirect("/login");
 }
