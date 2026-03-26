@@ -283,7 +283,7 @@ export default function SettingsClient({ initialProjects, initialUsers, initialR
                     
                     <div className="flex flex-wrap gap-2 mb-3">
                        <span className="text-[10px] bg-slate-200/50 text-slate-600 px-2 py-0.5 rounded font-medium border border-slate-300">
-                         Luật: {isPack ? 'Cố định (Pack)' : `Chiết khấu (${p.income_percentage}%)`}
+                         Luật: {p.income_rule_type === 'zero' ? 'Dự bị ($0)' : (isPack ? 'Cố định (Pack)' : `Chiết khấu (${p.income_percentage}%)`)}
                        </span>
                        {p.telegram_active ? (
                          <span className="text-[10px] bg-sky-50 text-sky-600 border border-sky-200 px-2 py-0.5 rounded font-bold">
@@ -651,6 +651,15 @@ export default function SettingsClient({ initialProjects, initialUsers, initialR
                       onChange={() => setFormData({...formData, income_rule_type: 'percentage'})}
                     /> 
                     Tỉ lệ phần trăm
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer whitespace-nowrap">
+                    <input 
+                      type="radio" 
+                      name="rule_type" 
+                      checked={formData.income_rule_type === 'zero'} 
+                      onChange={() => setFormData({...formData, income_rule_type: 'zero'})}
+                    /> 
+                    Dự án dự bị (Income = $0)
                   </label>
                 </div>
                 {formData.income_rule_type === 'percentage' && (

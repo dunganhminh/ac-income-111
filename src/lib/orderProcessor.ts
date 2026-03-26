@@ -12,7 +12,11 @@ export function calculateIncomeAndQuantities(lineItems: any[], ruleType: string,
     let rate = 0;
     let lineIncome = 0;
 
-    if (ruleType === 'percentage') {
+    if (ruleType === 'zero') {
+       rate = 0;
+       lineIncome = 0;
+       if (nameStr.includes("pack 10")) hasPack10 = true;
+    } else if (ruleType === 'percentage') {
        const lineTotal = Number(item.total) || 0; // total price of this line item
        lineIncome = lineTotal * (percentage / 100);
        rate = qty > 0 ? (lineIncome / qty) : 0;
