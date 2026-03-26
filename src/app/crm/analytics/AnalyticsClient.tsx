@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Activity, TrendingUp, DollarSign, Package, Calendar, Share2, Wallet } from "lucide-react";
-import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
+import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, subWeeks, subMonths, subYears, differenceInDays } from "date-fns";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -14,22 +14,89 @@ export default function AnalyticsClient({ initialProjects, initialOrders, initia
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  // 1. Filter Orders Before Aggregation
-  const filterByDate = (dateStr: string) => {
-    if (dateFilter === 'all') return true;
-    const d = new Date(dateStr);
-    if (dateFilter === 'today') return isToday(d);
-    if (dateFilter === 'week') return isThisWeek(d, { weekStartsOn: 1 });
-    if (dateFilter === 'month') return isThisMonth(d);
-    if (dateFilter === 'year') return isThisYear(d);
-    if (dateFilter === 'custom' && startDate && endDate) {
-      return isWithinInterval(d, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
+  // 1. Filter Orders and Define Previous Periods
+  const getPeriods = () => {
+    let currentStart = new Date();
+    let currentEnd = new Date();
+    let prevStart = new Date();
+    let prevEnd = new Date();
+    const now = new Date();
+
+    if (dateFilter === 'today') {
+      currentStart = startOfDay(now);
+      currentEnd = endOfDay(now);
+      prevStart = startOfDay(subDays(currentStart, 1));
+      prevEnd = endOfDay(subDays(currentEnd, 1));
+    } else if (dateFilter === 'week') {
+      currentStart = startOfWeek(now, { weekStartsOn: 1 });
+      currentEnd = endOfWeek(now, { weekStartsOn: 1 });
+      prevStart = subWeeks(currentStart, 1);
+      prevEnd = subWeeks(currentEnd, 1);
+    } else if (dateFilter === 'month') {
+      currentStart = startOfMonth(now);
+      currentEnd = endOfMonth(now);
+      prevStart = subMonths(currentStart, 1);
+      prevEnd = endOfMonth(prevStart);
+    } else if (dateFilter === 'year') {
+      currentStart = startOfYear(now);
+      currentEnd = endOfYear(now);
+      prevStart = subYears(currentStart, 1);
+      prevEnd = endOfYear(prevStart);
+    } else if (dateFilter === 'custom' && startDate && endDate) {
+      currentStart = startOfDay(parseISO(startDate));
+      currentEnd = endOfDay(parseISO(endDate));
+      const diff = differenceInDays(currentEnd, currentStart) + 1;
+      prevStart = subDays(currentStart, diff);
+      prevEnd = subDays(currentEnd, diff);
+    } else {
+      return null;
     }
-    return true;
+    return { currentStart, currentEnd, prevStart, prevEnd };
   };
 
-  const filteredOrders = initialOrders.filter(o => filterByDate(o.created_at));
-  const filteredExpenses = initialExpenses.filter(e => filterByDate(e.expense_date || e.created_at || e.date));
+  const periods = getPeriods();
+  const filteredOrders: any[] = [];
+  const prevOrders: any[] = [];
+  const filteredExpenses: any[] = [];
+
+  if (periods) {
+    initialOrders.forEach(o => {
+      const d = new Date(o.created_at);
+      if (d >= periods.currentStart && d <= periods.currentEnd) filteredOrders.push(o);
+      else if (d >= periods.prevStart && d <= periods.prevEnd) prevOrders.push(o);
+    });
+    initialExpenses.forEach(e => {
+      const d = new Date(e.expense_date || e.created_at || e.date || new Date());
+      if (d >= periods.currentStart && d <= periods.currentEnd) filteredExpenses.push(e);
+    });
+  } else {
+    filteredOrders.push(...initialOrders);
+    filteredExpenses.push(...initialExpenses);
+  }
+
+  // 1.b Comparison Data Prep
+  const projectComparison: Record<string, { name: string, curOrders: number, prevOrders: number, curProducts: number, prevProducts: number }> = {};
+  initialProjects.forEach(p => {
+    projectComparison[p.id] = { name: p.name, curOrders: 0, prevOrders: 0, curProducts: 0, prevProducts: 0 };
+  });
+
+  filteredOrders.forEach(o => {
+    if (projectComparison[o.project_id]) {
+      projectComparison[o.project_id].curOrders += 1;
+      const prods = o.products_summary || [];
+      const qty = prods.reduce((sum: number, p: any) => sum + Number(p.quantity || 1), 0);
+      projectComparison[o.project_id].curProducts += qty;
+    }
+  });
+
+  prevOrders.forEach(o => {
+    if (projectComparison[o.project_id]) {
+      projectComparison[o.project_id].prevOrders += 1;
+      const prods = o.products_summary || [];
+      const qty = prods.reduce((sum: number, p: any) => sum + Number(p.quantity || 1), 0);
+      projectComparison[o.project_id].prevProducts += qty;
+    }
+  });
 
   // Aggregate data by month
   const monthlyData: Record<string, { income: number, netRev: number }> = {};
@@ -325,6 +392,61 @@ export default function AnalyticsClient({ initialProjects, initialOrders, initia
           </div>
         </div>
 
+      </div>
+
+      {/* Comparison Table */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm mt-0 mb-10 p-6">
+        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-6">
+          <TrendingUp className="w-5 h-5 text-indigo-600" />
+          Báo Cáo Tăng Trưởng (Kỳ Hiện Tại vs Kỳ Trước Đó)
+        </h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+              <tr>
+                <th className="px-5 py-3">Website / Dự Án</th>
+                <th className="px-5 py-3 text-center border-l border-slate-200">Đơn Hàng (K.Trước)</th>
+                <th className="px-5 py-3 text-center">Đơn Hàng (K.Này)</th>
+                <th className="px-5 py-3 text-center bg-slate-50/80 text-emerald-600">± Tăng trưởng Đơn</th>
+                <th className="px-5 py-3 text-center border-l border-slate-200">Sản Phẩm (K.Trước)</th>
+                <th className="px-5 py-3 text-center">Sản Phẩm (K.Này)</th>
+                <th className="px-5 py-3 text-center bg-slate-50/80 text-emerald-600">± Tăng trưởng SP</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {initialProjects.map(p => {
+                const comp = projectComparison[p.id];
+                if (!comp) return null;
+                if (comp.curOrders === 0 && comp.prevOrders === 0) return null; // Hide totally inactive projects
+                
+                const renderGrowth = (cur: number, prev: number) => {
+                  if (prev === 0 && cur === 0) return <span className="text-slate-400 font-medium">-</span>;
+                  if (prev === 0 && cur > 0) return <span className="text-emerald-500 font-bold">+100.0% ↗</span>;
+                  const pct = ((cur - prev) / prev) * 100;
+                  if (pct > 0) return <span className="text-emerald-500 font-bold">+{pct.toFixed(1)}% ↗</span>;
+                  if (pct < 0) return <span className="text-rose-500 font-bold">{pct.toFixed(1)}% ↘</span>;
+                  return <span className="text-slate-400 font-medium">0%</span>;
+                };
+
+                return (
+                  <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-5 py-3 font-semibold text-slate-800">{comp.name}</td>
+                    <td className="px-5 py-3 text-center text-slate-500 border-l border-slate-50">{comp.prevOrders}</td>
+                    <td className="px-5 py-3 text-center font-bold text-slate-800">{comp.curOrders}</td>
+                    <td className="px-5 py-3 text-center bg-slate-50/50">{renderGrowth(comp.curOrders, comp.prevOrders)}</td>
+                    <td className="px-5 py-3 text-center text-slate-500 border-l border-slate-50">{comp.prevProducts}</td>
+                    <td className="px-5 py-3 text-center font-bold text-indigo-700">{comp.curProducts}</td>
+                    <td className="px-5 py-3 text-center bg-slate-50/50">{renderGrowth(comp.curProducts, comp.prevProducts)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          
+          {Object.values(projectComparison).every(c => c.curOrders === 0 && c.prevOrders === 0) && (
+            <div className="text-center py-8 text-slate-400 text-sm">Chưa có phát sinh lượng đơn nào ở cả 2 kỳ để so sánh.</div>
+          )}
+        </div>
       </div>
     </div>
   );
