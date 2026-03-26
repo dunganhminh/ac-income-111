@@ -85,7 +85,7 @@ export default function DashboardClient({ projects, orders, customers, expenses 
     : projects.map(p => ({...p, total_income: 0, order_count: 0}));
 
   // Limit rendering to Left Column cards
-  const renderingTopProjects = topProjects.slice(0, 4);
+  const renderingTopProjects = topProjects;
 
   return (
     <div className="p-8 h-full flex flex-col overflow-y-auto">
