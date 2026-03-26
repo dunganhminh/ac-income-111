@@ -3,6 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import { hashPassword } from "./authActions";
+import { cookies } from "next/headers";
 
 const getSupabaseAdmin = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -69,7 +70,19 @@ export async function deleteUserAction(id: string) {
 }
 
 export async function updateUserRoleAction(id: string, newRole: string) {
+  const cookieStore = await cookies();
+  const callerId = cookieStore.get("crm_user_id")?.value;
+  if (!callerId) return { success: false, error: "Chưa đăng nhập!" };
+
   const supabaseAdmin = getSupabaseAdmin();
+
+  // Xác thực chỉ Super Admin (vutieulong) mới được quyền
+  const { data: caller } = await supabaseAdmin.from("users").select("username").eq("id", callerId).single();
+  
+  if (!caller || caller.username !== "vutieulong") {
+    return { success: false, error: "Access Denied: Chỉ Super Admin 'vutieulong' mới có quyền thay đổi cấp độ tài khoản của người khác!" };
+  }
+
   const { error } = await supabaseAdmin
     .from("users")
     .update({ global_role: newRole })

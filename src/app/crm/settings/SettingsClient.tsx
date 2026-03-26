@@ -8,7 +8,7 @@ import { logoutAction } from "@/app/actions/roleActions";
 import { createUserAction, deleteUserAction, updateUserRoleAction } from "@/app/actions/userActions";
 import { saveRatesAction } from "@/app/actions/settingsActions";
 
-export default function SettingsClient({ initialProjects, initialUsers, initialRates }: { initialProjects: any[], initialUsers: any[], initialRates: any }) {
+export default function SettingsClient({ initialProjects, initialUsers, initialRates, currentUserId }: { initialProjects: any[], initialUsers: any[], initialRates: any, currentUserId?: string }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [rates, setRates] = useState(initialRates || { vnd: 25500, aud: 1.5 });
   const [saveStatus, setSaveStatus] = useState("");
@@ -20,6 +20,8 @@ export default function SettingsClient({ initialProjects, initialUsers, initialR
   const [userError, setUserError] = useState("");
   const [userFormData, setUserFormData] = useState({ username: "", password: "", full_name: "", role: "staff" });
   
+  const isSuperAdmin = usersList.find(u => u.id === currentUserId)?.username === 'vutieulong';
+
   // Toggles for Modal
   const [projects, setProjects] = useState<any[]>(initialProjects);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -437,17 +439,31 @@ export default function SettingsClient({ initialProjects, initialUsers, initialR
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <button onClick={() => handleToggleRole(u.id, u.global_role)} className="focus:outline-none" title="Nhấp để đổi quyền">
-                          {u.global_role === 'admin' ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200 hover:bg-purple-200 transition-colors">
-                               <UserCog className="w-3 h-3" /> Admin
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition-colors">
-                               Staff
-                            </span>
-                          )}
-                        </button>
+                        {isSuperAdmin ? (
+                          <button onClick={() => handleToggleRole(u.id, u.global_role)} className="focus:outline-none" title="Nhấp để đổi quyền">
+                            {u.global_role === 'admin' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200 hover:bg-purple-200 transition-colors">
+                                 <UserCog className="w-3 h-3" /> Admin
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition-colors">
+                                 Staff
+                              </span>
+                            )}
+                          </button>
+                        ) : (
+                          <span>
+                            {u.global_role === 'admin' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200 cursor-default opacity-80">
+                                 <UserCog className="w-3 h-3" /> Admin
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 cursor-default opacity-80">
+                                 Staff
+                              </span>
+                            )}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button onClick={() => handleDeleteUser(u.id, u.username || u.email || "N/A")} className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Xóa tài khoản">

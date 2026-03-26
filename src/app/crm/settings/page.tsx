@@ -8,6 +8,8 @@ export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
   const cookieStore = await cookies();
   const role = cookieStore.get("crm_role")?.value || "admin";
+  const currentUserId = cookieStore.get("crm_user_id")?.value;
+
   if (role !== "admin") {
     redirect("/crm/orders");
   }
@@ -34,5 +36,5 @@ export default async function SettingsPage() {
   if (pErr) console.error("Projects Error:", pErr);
   if (uErr) console.error("Users Error:", uErr);
 
-  return <SettingsClient initialProjects={projects || []} initialUsers={users || []} initialRates={initialRates} />;
+  return <SettingsClient initialProjects={projects || []} initialUsers={users || []} initialRates={initialRates} currentUserId={currentUserId} />;
 }
