@@ -4,7 +4,7 @@ import { processWooCommerceOrder } from '@/lib/orderProcessor';
 
 export async function POST(req: Request) {
   try {
-    const { projectId, startDate, endDate } = await req.json();
+    const { projectId, startDate, endDate, page = 1 } = await req.json();
 
     if (!projectId || !startDate || !endDate) {
       return NextResponse.json({ success: false, error: "Missing required fields" }, { status: 400 });
@@ -29,59 +29,36 @@ export async function POST(req: Request) {
     const authHeader = 'Basic ' + Buffer.from(`${project.woo_consumer_key}:${project.woo_consumer_secret}`).toString('base64');
     const baseUrl = project.website_url.replace(/\/$/, "");
 
-    // 2. Delete existing orders in the current sync range to PREVENT DUPLICATES!
-    // Since we changed from wc_order_id to custom_order_number, old orders were sticking around and creating dupes
-    const { error: deleteError } = await supabase
-      .from('orders')
-      .delete()
-      .eq('project_id', projectId)
-      .gte('created_at', `${startDate}T00:00:00Z`)
-      .lte('created_at', `${endDate}T23:59:59Z`);
+    // 2. Tắt cơ chế Xóa Orders (Delete) do có thể làm mất dữ liệu Manual Adjustment của khách hàng 
+    // Data mới kéo về sẽ đè lên dựa vào OnConflict Upsert thông minh
 
-    if (deleteError) {
-      console.error("Warning: Failed to delete old orders before sync:", deleteError);
+    // 3. Gọi duy nhất 1 trang thay vì vòng lặp while để tránh Timeout
+    const url = `${baseUrl}/wp-json/wc/v3/orders?after=${startDate}T00:00:00Z&before=${endDate}T23:59:59Z&per_page=100&page=${page}`;
+    
+    const wpRes = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!wpRes.ok) {
+      const errText = await wpRes.text();
+      throw new Error(`WooCommerce API Error (${wpRes.status}): ${errText}`);
     }
 
-    let allOrders: any[] = [];
-    let page = 1;
-    let hasMore = true;
-
-    while (hasMore) {
-      // Remove status filter so we fetch ALL statuses (cancelled, refunded, failed, etc.)
-      const url = `${baseUrl}/wp-json/wc/v3/orders?after=${startDate}T00:00:00Z&before=${endDate}T23:59:59Z&per_page=100&page=${page}`;
-      
-      const wpRes = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!wpRes.ok) {
-        const errText = await wpRes.text();
-        throw new Error(`WooCommerce API Error (${wpRes.status}): ${errText}`);
-      }
-
-      const pageOrders = await wpRes.json();
-      
-      if (!Array.isArray(pageOrders)) {
-        throw new Error("Invalid response format from WooCommerce");
-      }
-
-      if (pageOrders.length === 0) {
-        hasMore = false;
-      } else {
-        allOrders = allOrders.concat(pageOrders);
-        page++;
-      }
+    const pageOrders = await wpRes.json();
+    
+    if (!Array.isArray(pageOrders)) {
+      throw new Error("Invalid response format from WooCommerce");
     }
 
-    // 3. Process each order
+    // 4. Process each order in the page
     let successCount = 0;
     let failCount = 0;
 
-    for (const order of allOrders) {
+    for (const order of pageOrders) {
       try {
          // suppressTelegram = true to avoid spamming the user's phone with 100 historical alerts
          await processWooCommerceOrder(order, projectId, project, true);
@@ -92,10 +69,16 @@ export async function POST(req: Request) {
       }
     }
 
+    // 5. Trả về Frontend Cờ hasMore:
+    // Nếu trang hiện tại lấy bằng hoặc ít hơn 100 có thể là đã hết đơn, WooCommerce sẽ trả mảng pageOrders.length = 100 nếu đầy.
+    const hasMore = pageOrders.length === 100;
+
     return NextResponse.json({ 
       success: true, 
-      message: `Sync completed!`,
-      summary: { fetched: allOrders.length, success: successCount, failed: failCount }
+      hasMore: hasMore,
+      page: page,
+      message: `Đã đồng bộ trang ${page} thành công!`,
+      summary: { fetched: pageOrders.length, success: successCount, failed: failCount }
     }, { status: 200 });
 
   } catch (error: any) {

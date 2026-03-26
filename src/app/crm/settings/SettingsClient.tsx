@@ -194,27 +194,54 @@ export default function SettingsClient({ initialProjects, initialUsers, initialR
   const handleSyncOrders = async () => {
     if (!syncStartDate || !syncEndDate) return alert("Vui lòng chọn Từ Ngày và Đến Ngày.");
     setIsSyncing(true);
-    setSyncResult(null);
+    setSyncResult("Đang khởi tạo đồng bộ...");
+
+    let page = 1;
+    let hasMore = true;
+    let totalFetched = 0;
+    let totalSuccess = 0;
+    let totalFailed = 0;
 
     try {
-      const res = await fetch('/api/sync-orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          projectId: syncProjectId,
-          startDate: syncStartDate,
-          endDate: syncEndDate
-        })
-      });
-      const data = await res.json();
-      
-      if (data.success) {
-        setSyncResult(`Đã đồng bộ xong! Kéo được ${data.summary.fetched} đơn hàng. Lưu thành công: ${data.summary.success}, Lỗi: ${data.summary.failed}.`);
-      } else {
-        setSyncResult(`Lỗi: ${data.error}`);
+      while (hasMore) {
+        setSyncResult(`Đang đồng bộ trang ${page}... (${totalFetched} đơn đã được quét)`);
+        
+        const res = await fetch('/api/sync-orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: syncProjectId,
+            startDate: syncStartDate,
+            endDate: syncEndDate,
+            page: page
+          })
+        });
+        
+        if (!res.ok) {
+           const errText = await res.text();
+           throw new Error(`Mã lỗi trả về: ${res.status}. ${errText}`);
+        }
+
+        const data = await res.json();
+        
+        if (data.success) {
+          totalFetched += data.summary.fetched;
+          totalSuccess += data.summary.success;
+          totalFailed += data.summary.failed;
+          hasMore = data.hasMore;
+          
+          if (hasMore) {
+            page++;
+          }
+        } else {
+          throw new Error(data.error || "Lỗi không xác định từ máy chủ");
+        }
       }
+      
+      setSyncResult(`Đã đồng bộ Xong Toàn Bộ! Kéo được tổng cộng ${totalFetched} đơn hàng. Lưu thành công: ${totalSuccess}, Lỗi: ${totalFailed}.`);
+
     } catch (err: any) {
-       setSyncResult(`Lỗi kết nối: ${err.message}`);
+       setSyncResult(`Lỗi kết nối hoặc xử lý: ${err.message}`);
     } finally {
       setIsSyncing(false);
     }
