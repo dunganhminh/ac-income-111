@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Income Platform CRM",
+  title: "CRM Quản Lý Order",
   description: "Internal CRM Platform",
   robots: {
     index: false,
