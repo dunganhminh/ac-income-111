@@ -6,7 +6,7 @@ import { addExpenseAction, deleteExpenseAction } from "./actions";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import * as ExcelJS from "exceljs";
 
-export default function ExpensesClient({ initialProjects, initialExpenses }: { initialProjects: any[], initialExpenses: any[] }) {
+export default function ExpensesClient({ initialProjects, initialExpenses, initialRates }: { initialProjects: any[], initialExpenses: any[], initialRates: any }) {
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -47,7 +47,9 @@ export default function ExpensesClient({ initialProjects, initialExpenses }: { i
     return matchesSearch && matchesDate;
   });
 
+  const rates = initialRates || { aud: 1.5, vnd: 25500 };
   const totalUsdSpent = filteredExpenses.reduce((sum, e) => sum + Number(e.amount_usd), 0);
+  const totalAudSpent = totalUsdSpent * Number(rates.aud);
 
   const formatMoney = (amount: number, currency: string) => {
     if (currency === 'VND') return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount).replace('₫', 'VNĐ');
@@ -155,7 +157,7 @@ export default function ExpensesClient({ initialProjects, initialExpenses }: { i
         
         <div className="bg-red-50 text-red-700 px-4 py-2.5 rounded-xl border border-red-100 flex items-center justify-between shadow-sm w-full md:w-auto">
           <div className="text-sm font-semibold text-red-600 uppercase tracking-widest mr-3">Tổng Chi:</div>
-          <div className="text-xl font-black">{totalUsdSpent.toFixed(2)} USD</div>
+          <div className="text-xl font-black">{totalAudSpent.toFixed(2)} AUD</div>
         </div>
       </div>
 
@@ -303,7 +305,7 @@ export default function ExpensesClient({ initialProjects, initialExpenses }: { i
                   <th className="px-5 py-3">Dự Án</th>
                   <th className="px-5 py-3">Lý do / Hạng mục</th>
                   <th className="px-5 py-3 text-right">Khai Báo</th>
-                  <th className="px-5 py-3 text-right text-red-600 bg-red-50/30">Tính Vào Dashboard (USD)</th>
+                  <th className="px-5 py-3 text-right text-red-600 bg-red-50/30">Tính Vào Dashboard (AUD)</th>
                   <th className="px-5 py-3 text-center">Xóa</th>
                 </tr>
               </thead>
@@ -338,7 +340,7 @@ export default function ExpensesClient({ initialProjects, initialExpenses }: { i
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right bg-red-50/20">
-                        <span className="font-black text-red-600 text-base">-{Number(e.amount_usd).toFixed(2)} USD</span>
+                        <span className="font-black text-red-600 text-base">-{Number(Number(e.amount_usd) * rates.aud).toFixed(2)} AUD</span>
                       </td>
                       <td className="px-5 py-4 text-center">
                          <button onClick={() => handleDelete(e.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">

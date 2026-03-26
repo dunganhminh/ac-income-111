@@ -10,10 +10,16 @@ export async function addExpenseAction(formData: FormData) {
   const currency = formData.get("currency") as string;
   const expenseDate = formData.get("expenseDate") as string;
 
-  // Simple hardcoded exchange rates for demonstration.
-  // Real world: fetch live rates from an API or allow user input.
-  const USD_VND = 25000;
-  const USD_AUD = 1.5;
+  // Lấy tỷ giá từ DB
+  const { data: ratesSetting } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", "currency_rates")
+    .single();
+
+  const rates = ratesSetting?.value || { vnd: 25500, aud: 1.5 };
+  const USD_VND = Number(rates.vnd) || 25000;
+  const USD_AUD = Number(rates.aud) || 1.5;
 
   let exchange_rate = 1;
   let amount_usd = amount;

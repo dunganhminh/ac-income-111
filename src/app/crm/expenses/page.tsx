@@ -33,8 +33,16 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
 
   const { data: expenses, error: eErr } = await query;
 
+  const { data: ratesSetting } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", "currency_rates")
+    .single();
+
+  const initialRates = ratesSetting?.value || { vnd: 25500, aud: 1.5 };
+
   if (pErr) console.error("Projects Error: ", pErr);
   if (eErr) console.error("Expenses Error: ", eErr);
 
-  return <ExpensesClient initialProjects={projects || []} initialExpenses={expenses || []} />;
+  return <ExpensesClient initialProjects={projects || []} initialExpenses={expenses || []} initialRates={initialRates} />;
 }
