@@ -18,19 +18,17 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
 
   let query = supabase
     .from("orders")
-    .select("project_id, total_income, total_price, status, utm_source, created_at, order_number")
-    .is("deleted_at", null)
-    .not('status', 'in', '("cancelled","refunded","failed","trash")');
+    .select("*")
+    .is("deleted_at", null);
 
   if (projectId) {
     query = query.eq("project_id", projectId);
   }
-
   const { data: orders } = await query;
 
   let expensesQuery = supabase
     .from("expenses")
-    .select("project_id, amount, expense_date")
+    .select("*")
     .is("deleted_at", null);
 
   if (projectId) {
@@ -38,5 +36,22 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   }
   const { data: expenses } = await expensesQuery;
 
-  return <AnalyticsClient initialProjects={projects || []} initialOrders={orders || []} initialExpenses={expenses || []} />;
+  let custQuery = supabase.from("customers").select("*");
+  if (projectId) custQuery = custQuery.eq("project_id", projectId);
+  const { data: customers } = await custQuery;
+
+  const { data: ratesSetting } = await supabase
+    .from("system_settings")
+    .select("value")
+    .eq("key", "currency_rates")
+    .single();
+  const rates = ratesSetting?.value || { vnd: 25500, aud: 1.5 };
+
+  return <AnalyticsClient 
+     initialProjects={projects || []} 
+     initialOrders={orders || []} 
+     initialExpenses={expenses || []} 
+     initialCustomers={customers || []} 
+     initialRates={rates} 
+  />;
 }

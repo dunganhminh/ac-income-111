@@ -1,13 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Activity, TrendingUp, DollarSign, Package, Calendar, Share2, Wallet } from "lucide-react";
+import { Activity, TrendingUp, DollarSign, Package, Calendar, Share2, Wallet, Users, Flame, ShieldAlert, BarChart3, Trophy, ArrowRight } from "lucide-react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, subWeeks, subMonths, subYears, differenceInDays } from "date-fns";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
-export default function AnalyticsClient({ initialProjects, initialOrders, initialExpenses = [] }: { initialProjects: any[], initialOrders: any[], initialExpenses?: any[] }) {
+export default function AnalyticsClient({ 
+  initialProjects, 
+  initialOrders, 
+  initialExpenses = [], 
+  initialCustomers = [], 
+  initialRates 
+}: { 
+  initialProjects: any[]; 
+  initialOrders: any[]; 
+  initialExpenses?: any[]; 
+  initialCustomers?: any[]; 
+  initialRates?: any; 
+}) {
   
   // Date Filter State
   const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'month' | 'year' | 'custom' | 'all'>('all');
@@ -54,6 +66,7 @@ export default function AnalyticsClient({ initialProjects, initialOrders, initia
     return { currentStart, currentEnd, prevStart, prevEnd };
   };
 
+  const rates = initialRates || { aud: 1.5, vnd: 25500 };
   const periods = getPeriods();
   const filteredOrders: any[] = [];
   const prevOrders: any[] = [];
@@ -74,13 +87,18 @@ export default function AnalyticsClient({ initialProjects, initialOrders, initia
     filteredExpenses.push(...initialExpenses);
   }
 
+  // Calculate Valid Orders (Not Cancelled/Refunded) for standard revenue metrics
+  const cancelStatuses = ['cancelled', 'refunded', 'failed', 'trash'];
+  const validFilteredOrders = filteredOrders.filter(o => !cancelStatuses.includes(o.status));
+  const validPrevOrders = prevOrders.filter(o => !cancelStatuses.includes(o.status));
+
   // 1.b Comparison Data Prep
   const projectComparison: Record<string, { name: string, curOrders: number, prevOrders: number, curProducts: number, prevProducts: number }> = {};
   initialProjects.forEach(p => {
     projectComparison[p.id] = { name: p.name, curOrders: 0, prevOrders: 0, curProducts: 0, prevProducts: 0 };
   });
 
-  filteredOrders.forEach(o => {
+  validFilteredOrders.forEach(o => {
     if (projectComparison[o.project_id]) {
       projectComparison[o.project_id].curOrders += 1;
       const prods = o.products_summary || [];
@@ -89,7 +107,7 @@ export default function AnalyticsClient({ initialProjects, initialOrders, initia
     }
   });
 
-  prevOrders.forEach(o => {
+  validPrevOrders.forEach(o => {
     if (projectComparison[o.project_id]) {
       projectComparison[o.project_id].prevOrders += 1;
       const prods = o.products_summary || [];
@@ -110,7 +128,7 @@ export default function AnalyticsClient({ initialProjects, initialOrders, initia
   // Aggregate UTM
   const utmData: Record<string, { qty: number, income: number }> = {};
 
-  filteredOrders.forEach(o => {
+  validFilteredOrders.forEach(o => {
     // Trend Data Logic (Day or Month depending on filter)
     const d = new Date(o.created_at);
     
@@ -166,6 +184,102 @@ export default function AnalyticsClient({ initialProjects, initialOrders, initia
     .sort((a, b) => b[1].income - a[1].income);
   
   const totalGlobalIncome = Object.values(projectIncome).reduce((a, b) => a + b, 0);
+
+  // ----------------------------------------------------
+  // 5 ADVANCED METRICS (Data Prep)
+  // ----------------------------------------------------
+
+  // 1. Funnel / Lost Revenue
+  let totalLostRevenue = 0;
+  let totalSuccessfulRevenue = 0;
+  let cancelledCount = 0;
+  let successCount = 0;
+
+  filteredOrders.forEach(o => {
+    const isCancelled = cancelStatuses.includes(o.status);
+    const incomeObj = (Number(o.total_income) || 0) + (Number(o.manual_adjustment) || 0);
+
+    if (isCancelled) {
+      cancelledCount++;
+      totalLostRevenue += incomeObj;
+    } else {
+      successCount++;
+      totalSuccessfulRevenue += incomeObj;
+    }
+  });
+
+  const totalOrdersCount = cancelledCount + successCount;
+  const cancelRate = totalOrdersCount > 0 ? (cancelledCount / totalOrdersCount) * 100 : 0;
+
+  // 2. Retention (Khách cũ vs mới)
+  let returningIncome = 0;
+  let newIncome = 0;
+  let returningCount = 0;
+  let newCount = 0;
+
+  validFilteredOrders.forEach(o => {
+    const cust = initialCustomers.find(c => c.id === o.customer_id);
+    const isNew = cust && periods && new Date(cust.created_at) >= periods.currentStart;
+    const incomeToAdd = (Number(o.total_income) || 0) + (Number(o.manual_adjustment) || 0);
+    if (!isNew) { 
+      returningIncome += incomeToAdd;
+      returningCount++;
+    } else {
+      newIncome += incomeToAdd;
+      newCount++;
+    }
+  });
+  const retentionRate = (returningCount + newCount) > 0 ? (returningCount / (returningCount + newCount)) * 100 : 0;
+
+  // 3. Golden Hours Heatmap
+  const heatmapData: Record<string, number> = {};
+  const heatmapDays = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+  const heatmapHours = Array.from({ length: 24 }, (_, i) => i);
+  
+  validFilteredOrders.forEach(o => {
+    const d = new Date(o.created_at);
+    const key = `${d.getDay()}-${d.getHours()}`;
+    heatmapData[key] = (heatmapData[key] || 0) + 1;
+  });
+
+  const maxHeatmap = Object.values(heatmapData).length > 0 ? Math.max(...Object.values(heatmapData)) : 1;
+
+  // 4. Project P&L
+  const projectPnL: Record<string, { name: string, income: number, expense: number }> = {};
+  initialProjects.forEach(p => {
+    projectPnL[p.id] = { name: p.name, income: 0, expense: 0 };
+  });
+
+  validFilteredOrders.forEach(o => {
+    if (projectPnL[o.project_id]) {
+      projectPnL[o.project_id].income += (Number(o.total_income) || 0) + (Number(o.manual_adjustment) || 0);
+    }
+  });
+
+  filteredExpenses.forEach(e => {
+    if (projectPnL[e.project_id]) {
+      projectPnL[e.project_id].expense += Number(e.amount_usd || 0) * Number(rates.aud);
+    }
+  });
+
+  // 5. VIP Leaderboard
+  const customerLtv: Record<string, { id: string, name: string, email: string, income: number, orders: number }> = {};
+  validFilteredOrders.forEach(o => {
+    if (!customerLtv[o.customer_id]) {
+      const cust = initialCustomers.find(c => c.id === o.customer_id);
+      customerLtv[o.customer_id] = { 
+        id: o.customer_id,
+        name: cust?.full_name || 'Khách Vô Danh', 
+        email: cust?.email || 'N/A', 
+        income: 0, 
+        orders: 0 
+      };
+    }
+    customerLtv[o.customer_id].income += (Number(o.total_income) || 0) + (Number(o.manual_adjustment) || 0);
+    customerLtv[o.customer_id].orders += 1;
+  });
+
+  const topVIPs = Object.values(customerLtv).sort((a, b) => b.income - a.income).slice(0, 5);
 
   return (
     <div className="p-8 h-full flex flex-col overflow-y-auto">
@@ -447,6 +561,202 @@ export default function AnalyticsClient({ initialProjects, initialOrders, initia
             <div className="text-center py-8 text-slate-400 text-sm">Chưa có phát sinh lượng đơn nào ở cả 2 kỳ để so sánh.</div>
           )}
         </div>
+      </div>
+
+      {/* ADVANCED METRICS GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pb-10">
+        
+        {/* Retention Rate */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-6">
+            <Users className="w-5 h-5 text-indigo-600" />
+            Khách Cũ vs Khách Mới (Retention)
+          </h2>
+          <div className="flex justify-between items-end mb-4">
+            <div>
+              <div className="text-3xl font-black text-slate-800">{retentionRate.toFixed(1)}%</div>
+              <div className="text-sm font-semibold text-slate-500">Tỷ lệ khách hàng quay lại</div>
+            </div>
+            <div className="text-sm font-bold text-slate-600">{returningCount + newCount} Khách Tổng</div>
+          </div>
+          <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden flex mb-6">
+            <div className="bg-indigo-500 h-full" style={{ width: `${retentionRate}%` }}></div>
+            <div className="bg-emerald-400 h-full" style={{ width: `${100 - retentionRate}%` }}></div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 mt-auto">
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative overflow-hidden">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-indigo-500"></div>
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Khách Quay Lại</span>
+              </div>
+              <div className="text-xl font-black text-slate-800">{returningCount} <span className="text-xs font-semibold text-slate-500">Người</span></div>
+              <div className="text-sm font-bold text-indigo-600 mt-0.5">${returningIncome.toFixed(2)}</div>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 relative overflow-hidden">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">Khách Mới Mua</span>
+              </div>
+              <div className="text-xl font-black text-slate-800">{newCount} <span className="text-xs font-semibold text-slate-500">Người</span></div>
+              <div className="text-sm font-bold text-emerald-600 mt-0.5">${newIncome.toFixed(2)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* VIP Leaderboard */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-6">
+            <Trophy className="w-5 h-5 text-amber-500" />
+            Bảng Vàng Khách VIP
+          </h2>
+          <div className="space-y-3 mt-auto">
+            {topVIPs.length > 0 ? topVIPs.map((vip, idx) => (
+              <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-amber-200 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${idx === 0 ? 'bg-amber-100 text-amber-600' : idx === 1 ? 'bg-slate-200 text-slate-600' : idx === 2 ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-500'}`}>
+                    #{idx + 1}
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-slate-800 truncate max-w-[120px]" title={vip.name}>{vip.name}</div>
+                    <div className="text-[10px] font-semibold text-slate-500">{vip.orders} đơn hàng</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-base font-black text-slate-800">${vip.income.toFixed(2)}</div>
+                </div>
+              </div>
+            )) : (
+              <div className="text-center py-10 text-sm text-slate-400 font-medium border border-dashed border-slate-200 rounded-xl bg-slate-50">Chưa có dữ liệu khách hàng VIP trong kỳ này.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Cancellation Funnel */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-6">
+            <ShieldAlert className="w-5 h-5 text-rose-500" />
+            Kiểm Soát Nhận / Hoàn Huỷ Phễu
+          </h2>
+          
+          <div className="flex gap-4 items-center justify-between mb-6 mt-auto">
+            <div className="text-center p-4 bg-emerald-50 rounded-xl border border-emerald-100 flex-1 relative overflow-hidden">
+              <div className="text-[11px] font-black text-emerald-600 mb-1 tracking-widest uppercase">Đơn Thành Công</div>
+              <div className="text-3xl font-black text-emerald-700">{successCount}</div>
+              <div className="text-sm font-bold text-emerald-600 mt-1">${totalSuccessfulRevenue.toFixed(2)}</div>
+            </div>
+            <ArrowRight className="w-6 h-6 text-slate-300 shrink-0" />
+            <div className="text-center p-4 bg-rose-50 rounded-xl border border-rose-100 flex-1 relative overflow-hidden">
+              <div className="text-[11px] font-black text-rose-600 mb-1 tracking-widest uppercase">Thất bại / Bùng</div>
+              <div className="text-3xl font-black text-rose-700">{cancelledCount}</div>
+              <div className="text-sm font-bold text-rose-600 mt-1">-${totalLostRevenue.toFixed(2)}</div>
+            </div>
+          </div>
+
+          <div className="p-5 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center mt-2">
+             <div>
+               <div className="text-xs font-bold text-slate-500 mb-0.5">Tỷ Lệ Bùng Cắp (Cancel Rate)</div>
+               <div className="text-2xl font-black text-slate-800">{cancelRate.toFixed(1)}%</div>
+             </div>
+             <div className="text-right flex flex-col items-end">
+               <div className="text-xs font-bold text-slate-500 mb-0.5">Doanh Thu Thất Thoát</div>
+               <div className="bg-rose-100 text-rose-700 px-3 py-1 rounded-lg text-lg font-black border border-rose-200">
+                 -${totalLostRevenue.toFixed(2)}
+               </div>
+             </div>
+          </div>
+        </div>
+
+        {/* Project P&L */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-4">
+            <BarChart3 className="w-5 h-5 text-blue-500" />
+            Lợi Nhuận Ròng (P&L) Chi Tiết
+          </h2>
+          <div className="overflow-x-auto mt-auto border border-slate-100 rounded-xl">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-100">
+                <tr>
+                  <th className="px-4 py-3 text-[11px] uppercase tracking-wider">Website</th>
+                  <th className="px-4 py-3 text-right text-[11px] uppercase tracking-wider">Gross Income</th>
+                  <th className="px-4 py-3 text-right text-rose-600 text-[11px] uppercase tracking-wider">Tiền Ads & Chi phí</th>
+                  <th className="px-4 py-3 text-right text-emerald-600 text-[11px] uppercase tracking-wider">Net Profit</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50 relative">
+                {Object.values(projectPnL).map((pnl, idx) => {
+                  const net = pnl.income - (pnl.expense);
+                  const isProfit = net >= 0;
+                  return (
+                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-4 py-3.5 font-bold text-slate-800">{pnl.name}</td>
+                      <td className="px-4 py-3.5 text-right font-bold text-slate-600">${pnl.income.toFixed(2)}</td>
+                      <td className="px-4 py-3.5 text-right font-black text-rose-500">-${pnl.expense.toFixed(2)}</td>
+                      <td className={`px-4 py-3.5 text-right font-black ${isProfit ? 'text-emerald-500' : 'text-rose-600'}`}>
+                        ${net.toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {Object.keys(projectPnL).length === 0 && (
+                  <tr><td colSpan={4} className="text-center py-8 text-slate-400 text-sm font-medium">Chưa có dự án kinh doanh nào</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Golden Hours Heatmap */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm lg:col-span-2 flex flex-col">
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2 mb-6">
+            <Flame className="w-5 h-5 text-orange-500" />
+            Lưới Nhiệt Khung Giờ Vàng (Golden Hours Heatmap)
+          </h2>
+          <p className="text-xs font-semibold text-slate-500 mb-6">
+            Trực quan hóa mức độ mua hàng (Múi Giờ). Đồ thị màu càng rực đỏ chứng tỏ số lượng Đơn càng lớn để tối ưu chi tiền Ads.
+          </p>
+          <div className="overflow-x-auto pb-4 mt-auto">
+            <div className="min-w-[800px] flex gap-2">
+              <div className="w-16 shrink-0 flex flex-col gap-1.5 mt-6">
+                {heatmapDays.map((day, i) => (
+                  <div key={i} className="h-7 text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-end pr-2">{day}</div>
+                ))}
+              </div>
+              <div className="flex-1">
+                <div className="flex gap-1.5 mb-2">
+                  {heatmapHours.map((hour) => (
+                    <div key={hour} className="flex-1 text-center text-[10px] font-black text-slate-300">{hour}h</div>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  {heatmapDays.map((day, dayIdx) => (
+                    <div key={dayIdx} className="flex gap-1.5">
+                      {heatmapHours.map((hour) => {
+                        const count = heatmapData[`${dayIdx}-${hour}`] || 0;
+                        const intensity = count > 0 ? Math.max(0.1, count / maxHeatmap) : 0;
+                        return (
+                          <div 
+                            key={hour} 
+                            className="flex-1 h-7 rounded-md relative group cursor-pointer transition-all hover:scale-[1.15] hover:z-10 shadow-sm"
+                            style={{ 
+                              backgroundColor: count > 0 ? `rgba(249, 115, 22, ${intensity})` : '#f8fafc',
+                              border: count === 0 ? '1px solid #f1f5f9' : 'none'
+                            }}
+                          >
+                            <div className="hidden group-hover:block absolute bottom-full left-1/2 -translate-x-1/2 mb-3 bg-slate-900 border border-slate-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg whitespace-nowrap z-50 shadow-xl">
+                              <span className="text-orange-400 text-sm font-black mr-1">{count}</span> Giao dịch
+                              <div className="text-slate-400 font-medium text-[9px] mt-0.5">{hour}h00 {day}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
