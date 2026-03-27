@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Download, Search, Eye, EyeOff, CheckCircle2, Clock, XCircle, Calendar, ShoppingCart } from "lucide-react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import * as ExcelJS from "exceljs";
@@ -8,7 +8,7 @@ import * as ExcelJS from "exceljs";
 export default function OrdersClient({ initialOrders, initialProjects = [], role = 'admin' }: { initialOrders: any[], initialProjects?: any[], role?: string }) {
   const isAdmin = role === 'admin';
   const [focusMode, setFocusMode] = useState(false);
-  const [search, setSearch] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [appliedSearch, setAppliedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -248,17 +248,17 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
         <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg w-full md:w-80 text-sm border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-100 transition-all">
           <Search className="w-4 h-4 text-slate-400" />
           <input 
+            ref={searchInputRef}
             type="text" 
             placeholder="Tìm mã đơn, tên, email..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            defaultValue={appliedSearch}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') setAppliedSearch(search);
+              if (e.key === 'Enter') setAppliedSearch(e.currentTarget.value);
             }}
             className="bg-transparent border-none outline-none flex-1 text-slate-700 placeholder:text-slate-400" 
           />
           <button 
-            onClick={() => setAppliedSearch(search)}
+            onClick={() => setAppliedSearch(searchInputRef.current?.value || "")}
             className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1 rounded text-xs font-bold transition-colors shadow-sm ml-1"
           >
             Tìm
