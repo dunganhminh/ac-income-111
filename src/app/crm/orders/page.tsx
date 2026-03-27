@@ -10,7 +10,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
 
   let query = supabase
     .from("orders")
-    .select("id, project_id, order_number, created_at, status, total_price, currency, tags, payment_method, gateway_transaction_id, shipping_fee, paypal_fee, total_income, manual_adjustment, products_summary, utm_source, customer:customer_id(full_name, email, phone)")
+    .select("id, project_id, order_number, created_at, status, total_price, payment_method, gateway_transaction_id, shipping_fee, paypal_fee, total_income, manual_adjustment, products_summary, customer:customer_id(full_name, email, phone)")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
