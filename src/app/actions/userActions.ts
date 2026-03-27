@@ -56,6 +56,23 @@ export async function createUserAction(formData: FormData) {
   return { success: true, user: data };
 }
 
+export async function changePasswordAction(userId: string, newPasswordStr: string) {
+  const supabaseAdmin = getSupabaseAdmin();
+  if (!userId || !newPasswordStr) return { success: false, error: "Thiếu ID người dùng hoặc Mật khẩu mới" };
+
+  const hash = await hashPassword(newPasswordStr);
+
+  const { error } = await supabaseAdmin
+    .from("users")
+    .update({ password_hash: hash })
+    .eq("id", userId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+  return { success: true };
+}
+
 export async function deleteUserAction(id: string) {
   const supabaseAdmin = getSupabaseAdmin();
   // Soft delete: update deleted_at instead of permanently deleting

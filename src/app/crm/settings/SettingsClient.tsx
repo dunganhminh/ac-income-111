@@ -5,7 +5,7 @@ import { Link as LinkIcon, Copy, Variable, Trash2, Plus, Users, UserCog, Webhook
 import { supabase } from "@/lib/supabase";
 import { saveProjectAction, deleteProjectAction } from "@/app/actions/projectActions";
 import { logoutAction } from "@/app/actions/roleActions";
-import { createUserAction, deleteUserAction, updateUserRoleAction } from "@/app/actions/userActions";
+import { createUserAction, deleteUserAction, updateUserRoleAction, changePasswordAction } from "@/app/actions/userActions";
 import { saveRatesAction } from "@/app/actions/settingsActions";
 
 export default function SettingsClient({ initialProjects, initialUsers, initialRates, currentUserId }: { initialProjects: any[], initialUsers: any[], initialRates: any, currentUserId?: string }) {
@@ -21,6 +21,13 @@ export default function SettingsClient({ initialProjects, initialUsers, initialR
   const [userFormData, setUserFormData] = useState({ username: "", password: "", full_name: "", role: "staff" });
   
   const isSuperAdmin = usersList.find(u => u.id === currentUserId)?.username === 'vutieulong';
+
+  // Password Modal State
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   // Toggles for Modal
   const [projects, setProjects] = useState<any[]>(initialProjects);
@@ -100,6 +107,32 @@ export default function SettingsClient({ initialProjects, initialUsers, initialR
       setUsersList(usersList.map(u => u.id === id ? { ...u, global_role: newRole } : u));
     } else {
       alert(res.error);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordError("Mật khẩu mới phải có ít nhất 6 ký tự.");
+      return;
+    }
+    setIsChangingPassword(true);
+    setPasswordError("");
+    try {
+      const res = await changePasswordAction(currentUserId!, newPassword);
+      if (res.success) {
+        setPasswordSuccess(true);
+        setTimeout(() => {
+          setIsPasswordModalOpen(false);
+          setPasswordSuccess(false);
+          setNewPassword("");
+        }, 2000);
+      } else {
+        setPasswordError(res.error || "Có lỗi khi đổi mật khẩu");
+      }
+    } catch(err:any) {
+      setPasswordError(err.message);
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -419,12 +452,16 @@ export default function SettingsClient({ initialProjects, initialUsers, initialR
             </div>
             
             <div className="flex gap-3 border-t border-slate-100 pt-4">
+              <button onClick={() => setIsPasswordModalOpen(true)} className="w-full flex items-center justify-center gap-2 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 py-2.5 rounded-lg transition-colors shadow-sm">
+                <Key className="w-4 h-4" />
+                Đổi Mật Khẩu
+              </button>
               <form action={async () => {
                 await logoutAction();
               }} className="w-full">
                 <button type="submit" className="w-full flex items-center justify-center gap-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 py-2.5 rounded-lg transition-colors shadow-sm">
                   <LogOut className="w-4 h-4" />
-                  Đăng Xuất (Sign Out)
+                  Đăng Xuất
                 </button>
               </form>
             </div>
@@ -821,6 +858,53 @@ export default function SettingsClient({ initialProjects, initialUsers, initialR
               >
                 {isSyncing ? <><RefreshCw className="w-4 h-4 animate-spin" /> Đang chạy...</> : "Bắt đầu Sync"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL ĐỔI MẬT KHẨU --- */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden flex flex-col animate-in zoom-in-95">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><Key className="w-5 h-5 text-teal-600"/> Đổi Mật Khẩu</h3>
+              <button onClick={() => setIsPasswordModalOpen(false)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors">
+                <X className="w-5 h-5"/>
+              </button>
+            </div>
+            
+            <div className="p-5 flex flex-col gap-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Mật khẩu mới</label>
+                <input 
+                  type="password" 
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-[2px] focus:outline-teal-500" 
+                  placeholder="Nhập tối thiểu 6 ký tự"
+                />
+              </div>
+              
+              {passwordError && (
+                <div className="p-2 text-xs text-red-600 bg-red-50 rounded-lg border border-red-100 font-semibold">{passwordError}</div>
+              )}
+              {passwordSuccess && (
+                <div className="p-2 text-xs text-emerald-700 bg-emerald-50 rounded-lg border border-emerald-200 font-semibold flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4"/> Đổi mật khẩu thành công!
+                </div>
+              )}
+            </div>
+            
+            <div className="p-4 border-t border-slate-100 flex justify-end gap-3 bg-slate-50 shrink-0">
+              <button onClick={() => setIsPasswordModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors">Hủy</button>
+              <button 
+                onClick={handleChangePassword} 
+                disabled={isChangingPassword || passwordSuccess} 
+                className="px-5 py-2 text-sm font-bold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 rounded-lg shadow-sm transition-colors"
+               >
+                 {isChangingPassword ? "Đang xử lý..." : "Xác nhận đổi"}
+               </button>
             </div>
           </div>
         </div>
