@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase, fetchAllSupabase } from "@/lib/supabase";
 import AnalyticsClient from "./AnalyticsClient";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -19,28 +19,26 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   let query = supabase
     .from("orders")
     .select("*")
-    .is("deleted_at", null)
-    .limit(100000);
+    .is("deleted_at", null);
 
   if (projectId) {
     query = query.eq("project_id", projectId);
   }
-  const { data: orders } = await query;
+  const { data: orders } = await fetchAllSupabase(query);
 
   let expensesQuery = supabase
     .from("expenses")
     .select("*")
-    .is("deleted_at", null)
-    .limit(100000);
+    .is("deleted_at", null);
 
   if (projectId) {
     expensesQuery = expensesQuery.eq("project_id", projectId);
   }
-  const { data: expenses } = await expensesQuery;
+  const { data: expenses } = await fetchAllSupabase(expensesQuery);
 
-  let custQuery = supabase.from("customers").select("*").limit(100000);
+  let custQuery = supabase.from("customers").select("*");
   if (projectId) custQuery = custQuery.eq("project_id", projectId);
-  const { data: customers } = await custQuery;
+  const { data: customers } = await fetchAllSupabase(custQuery);
 
   const { data: ratesSetting } = await supabase
     .from("system_settings")

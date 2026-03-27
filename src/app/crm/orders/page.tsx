@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase, fetchAllSupabase } from "@/lib/supabase";
 import OrdersClient from "./OrdersClient";
 import { cookies } from "next/headers";
 
@@ -12,14 +12,13 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
     .from("orders")
     .select("*, customer:customer_id (full_name, email, phone)")
     .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(100000);
+    .order("created_at", { ascending: false });
 
   if (projectId) {
     query = query.eq("project_id", projectId);
   }
 
-  const { data: orders, error: oErr } = await query;
+  const { data: orders, error: oErr } = await fetchAllSupabase(query);
 
   if (oErr) {
     return <div className="p-8 text-red-500 font-bold">Lỗi tải dữ liệu Đơn hàng: {oErr.message}</div>;

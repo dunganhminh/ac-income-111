@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase, fetchAllSupabase } from "@/lib/supabase";
 import DashboardClient from "./DashboardClient";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -15,22 +15,19 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   // Fetch overarching context data for all projects
   const { data: projects, error: pErr } = await supabase.from('projects').select('*').is('deleted_at', null);
   
-  // Queries (Optimized for Maximum 100k rows with specific tiny columns to save Vercel RAM)
+  // Queries (Optimized columns to save Vercel RAM, but load recursively using fetchAllSupabase)
   let oQuery = supabase.from('orders')
     .select('id, project_id, status, total_price, shipping_fee, paypal_fee, total_income, manual_adjustment, created_at')
     .is('deleted_at', null)
-    .not('status', 'in', '("cancelled","refunded","failed","trash")')
-    .limit(100000);
+    .not('status', 'in', '("cancelled","refunded","failed","trash")');
     
   let cQuery = supabase.from('customers')
     .select('id, project_id, lifetime_orders, last_order_date')
-    .is('deleted_at', null)
-    .limit(100000);
+    .is('deleted_at', null);
     
   let exQuery = supabase.from('expenses')
     .select('id, project_id, amount_usd, expense_date, created_at')
-    .is('deleted_at', null)
-    .limit(100000);
+    .is('deleted_at', null);
 
   if (projectId) {
     oQuery = oQuery.eq('project_id', projectId);
@@ -38,7 +35,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     exQuery = exQuery.eq('project_id', projectId);
   }
 
-  const [ {data: orders, error: oErr}, {data: customers, error: cErr}, {data: expenses, error: exErr} ] = await Promise.all([oQuery, cQuery, exQuery]);
+  const [ {data: orders, error: oErr}, {data: customers, error: cErr}, {data: expenses, error: exErr} ] = await Promise.all([
+    fetchAllSupabase(oQuery),
+    fetchAllSupabase(cQuery),
+    fetchAllSupabase(exQuery)
+  ]);
 
   const { data: ratesSetting } = await supabase
     .from("system_settings")

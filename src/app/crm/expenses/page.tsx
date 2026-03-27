@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase, fetchAllSupabase } from "@/lib/supabase";
 import ExpensesClient from "./ExpensesClient";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -31,7 +31,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
     query = query.eq("project_id", projectId);
   }
 
-  const { data: expenses, error: eErr } = await query;
+  const { data: expenses, error: eErr } = await fetchAllSupabase(query);
 
   const { data: ratesSetting } = await supabase
     .from("system_settings")

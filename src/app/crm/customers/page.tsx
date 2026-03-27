@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase, fetchAllSupabase } from "@/lib/supabase";
 import CustomersClient from "./CustomersClient";
 
 export const dynamic = "force-dynamic";
@@ -11,14 +11,13 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
     .from("customers")
     .select(`*`)
     .is("deleted_at", null)
-    .order("lifetime_spent", { ascending: false })
-    .limit(100000);
+    .order("lifetime_spent", { ascending: false });
 
   if (projectId) {
     query = query.eq("project_id", projectId);
   }
 
-  const { data: customers, error } = await query;
+  const { data: customers, error } = await fetchAllSupabase(query);
 
   if (error) {
     console.error("Error fetching customers:", error);
