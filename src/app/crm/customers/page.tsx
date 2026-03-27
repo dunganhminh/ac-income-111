@@ -9,7 +9,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
 
   let query = supabase
     .from("customers")
-    .select(`*`)
+    .select(`*, project:project_id(name), orders(*)`)
     .is("deleted_at", null)
     .order("lifetime_spent", { ascending: false });
 

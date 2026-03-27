@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Filter, Copy, ExternalLink, CalendarClock, Download, Calendar, Trash2, Loader2 } from "lucide-react";
+import { Search, Filter, Copy, ExternalLink, CalendarClock, Download, Calendar, Trash2, Loader2, X } from "lucide-react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import * as ExcelJS from "exceljs";
 
@@ -21,6 +21,15 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
   
   // Local Data State so we can remove instantly without full reload
   const [localCustomers, setLocalCustomers] = useState<any[]>(initialCustomers);
+
+  // History Modal State
+  const [selectedCustomerForHistory, setSelectedCustomerForHistory] = useState<any | null>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
+  const openHistory = (c: any) => {
+    setSelectedCustomerForHistory(c);
+    setIsHistoryModalOpen(true);
+  };
 
   const filteredCustomers = localCustomers.filter((c) => {
     // Basic search
@@ -321,10 +330,17 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
                      />
                   </td>
                   <td className="px-5 py-4">
-                    <div className="font-bold text-slate-800 text-base">{c.full_name || "Guest User"}</div>
-                    <div className="text-[12px] text-slate-500 mt-1 flex flex-col gap-0.5">
+                    <button onClick={() => openHistory(c)} className="font-bold text-slate-800 text-base hover:text-blue-600 hover:underline text-left text-wrap decoration-blue-300 underline-offset-4 line-clamp-2">
+                       {c.full_name || "Guest User"}
+                    </button>
+                    <div className="text-[12px] text-slate-500 mt-1 flex flex-col gap-0.5 items-start">
                       <span className="truncate max-w-[200px]" title={c.email}>{c.email}</span>
                       {c.phone && <span>{c.phone}</span>}
+                      {c.project?.name && (
+                        <span className="inline-flex max-w-max items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 mt-0.5">
+                          [{c.project.name}]
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="px-5 py-4">
@@ -376,6 +392,78 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
           </tbody>
         </table>
       </div>
+      {/* HISTORY MODAL */}
+      {isHistoryModalOpen && selectedCustomerForHistory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col animate-in zoom-in-95 max-h-[90vh]">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50">
+              <div>
+                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">Hồ Sơ Của: <span className="text-blue-600">{selectedCustomerForHistory.full_name || "Guest User"}</span></h3>
+                <p className="text-sm text-slate-500 mt-1">{selectedCustomerForHistory.email}</p>
+              </div>
+              <button onClick={() => setIsHistoryModalOpen(false)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors">
+                <X className="w-5 h-5"/>
+              </button>
+            </div>
+            
+            <div className="p-0 overflow-y-auto">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-[#F8FAFC] border-b text-xs uppercase font-semibold text-slate-500 sticky top-0">
+                  <tr>
+                    <th className="px-5 py-3">Ngày Mua</th>
+                    <th className="px-5 py-3">Mã Đơn</th>
+                    <th className="px-5 py-3">Sản Phẩm</th>
+                    <th className="px-5 py-3">Thành Tiền</th>
+                    <th className="px-5 py-3 text-right">Trạng Thái</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {(selectedCustomerForHistory.orders || []).length > 0 ? (
+                    (selectedCustomerForHistory.orders || []).sort((a:any, b:any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((order: any) => (
+                      <tr key={order.id} className="hover:bg-slate-50">
+                        <td className="px-5 py-3 text-slate-600">{new Date(order.created_at).toLocaleDateString()}</td>
+                        <td className="px-5 py-3 font-semibold text-slate-700">{order.order_number}</td>
+                        <td className="px-5 py-3">
+                          <div className="flex flex-col gap-1">
+                            {(order.products_summary || []).map((p:any, i:number) => (
+                              <span key={i} className="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-600 w-max">{p.quantity}x {p.name}</span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 font-bold text-emerald-600">
+                          {Number(order.total_price).toFixed(2)} {order.currency || 'AUD'}
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <span className={`px-2 py-1 rounded text-[11px] font-bold uppercase ${
+                            order.status === 'completed' || order.status === 'processing' ? 'bg-green-100 text-green-700' :
+                            order.status === 'cancelled' || order.status === 'failed' || order.status === 'trash' ? 'bg-red-100 text-red-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {order.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="py-10 text-center text-slate-500 font-medium italic">
+                        Chưa có dữ liệu đơn hàng (Khách hàng này có thể mới đăng ký hoặc bị ẩn).
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0 text-right">
+              <div className="text-xs text-slate-500 font-medium tracking-wide">
+                <span>Tổng số đơn đã mua:</span> <span className="font-bold text-slate-800 text-sm ml-1 mr-4">{(selectedCustomerForHistory.orders || []).length}</span> 
+                <span>Tổng chi tiêu LTV:</span> <span className="font-bold text-indigo-600 text-sm ml-1">{Number(selectedCustomerForHistory.lifetime_spent).toFixed(2)} AUD</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
