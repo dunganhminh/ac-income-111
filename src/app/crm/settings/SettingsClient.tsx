@@ -378,6 +378,15 @@ export default function SettingsClient({ initialProjects, initialUsers, initialR
                   className="w-32 px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-right font-bold focus:outline-none focus:ring-2 focus:ring-emerald-100" 
                 />
               </div>
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <label className="text-sm font-black text-emerald-700">1 AUD = ? VNĐ</label>
+                <input 
+                  type="number" 
+                  value={rates.aud_vnd || Math.round(rates.vnd / (rates.aud || 1))}
+                  onChange={e => setRates({...rates, aud_vnd: Number(e.target.value)})}
+                  className="w-32 px-3 py-1.5 border border-emerald-300 bg-emerald-50 text-emerald-800 rounded-lg text-sm text-right font-black focus:outline-none focus:ring-2 focus:ring-emerald-400 shadow-inner" 
+                />
+              </div>
             </div>
             
             <div className="mt-5 flex justify-end items-center gap-3 border-t border-slate-100 pt-4">

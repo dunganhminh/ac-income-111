@@ -16,7 +16,10 @@ export default function DashboardClient({ projects, orders, customers, expenses 
 
 
   const formatCurrency = (amountAUD: number) => {
-    if (currency === 'VND') return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amountAUD * (rates.vnd / rates.aud)).replace('₫', 'VNĐ');
+    if (currency === 'VND') {
+       const audVndRate = rates.aud_vnd || (rates.vnd / (rates.aud || 1.5));
+       return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amountAUD * audVndRate).replace('₫', 'VNĐ');
+    }
     if (currency === 'USD') return `${(amountAUD / rates.aud).toFixed(2)} USD`;
     return `${amountAUD.toFixed(2)} AUD`; // Mặc định hiển thị định dạng AUD ở hậu tố
   };
