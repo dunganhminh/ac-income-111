@@ -19,7 +19,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
   let query = supabase
     .from("expenses")
     .select(`
-      *,
+      id, project_id, amount_usd, reason, expense_date, created_at, amount, currency,
       projects (
         name
       )
