@@ -1,8 +1,8 @@
 "use client";
 
-import { DollarSign, ShoppingCart, Users, TrendingUp, TrendingDown, Wallet, AlertCircle, LayoutDashboard, ChevronRight, Calendar } from "lucide-react";
+import { DollarSign, ShoppingCart, Users, TrendingDown, Wallet, AlertCircle, LayoutDashboard, ChevronRight, Calendar } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 
 export default function DashboardClient({ projects, orders, customers, expenses = [], isAdmin = true, selectedProject, initialRates }: { projects: any[], orders: any[], customers: any[], expenses?: any[], isAdmin?: boolean, selectedProject?: any, initialRates?: any }) {
@@ -25,7 +25,7 @@ export default function DashboardClient({ projects, orders, customers, expenses 
   };
 
   // --- FILTER CORE DATA BY DATE ---
-  const filteredOrders = orders.filter(o => {
+  const filteredOrders = useMemo(() => orders.filter((o: any) => {
     if (dateFilter === 'all') return true;
     const od = new Date(o.created_at);
     if (dateFilter === 'today') return isToday(od);
@@ -36,9 +36,9 @@ export default function DashboardClient({ projects, orders, customers, expenses 
       return isWithinInterval(od, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
     }
     return true;
-  });
+  }), [orders, dateFilter, startDate, endDate]);
 
-  const filteredExpenses = expenses.filter(e => {
+  const filteredExpenses = useMemo(() => expenses.filter((e: any) => {
     if (dateFilter === 'all') return true;
     const ed = new Date(e.expense_date || e.created_at || new Date());
     if (dateFilter === 'today') return isToday(ed);
@@ -49,16 +49,23 @@ export default function DashboardClient({ projects, orders, customers, expenses 
       return isWithinInterval(ed, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
     }
     return true;
-  });
+  }), [expenses, dateFilter, startDate, endDate]);
   
   // 1. Calculate Top Metrics
-  const totalIncome = filteredOrders.reduce((sum, o) => sum + Number(o.total_income) + Number(o.manual_adjustment), 0);
-  const totalNetRevenue = filteredOrders.reduce((sum, o) => sum + (Number(o.total_price) - Number(o.paypal_fee) - Number(o.shipping_fee || 0)), 0);
-  const totalExpenses = filteredExpenses.reduce((sum, e) => sum + (Number(e.amount_usd) * rates.aud), 0); // Convert USD expense to AUD to match Income baseline
-  const netProfit = totalIncome - totalExpenses;
-  const totalOrders = filteredOrders.length;
+  const { totalIncome, totalNetRevenue, totalExpenses, netProfit, totalOrders } = useMemo(() => {
+    const income = filteredOrders.reduce((sum: number, o: any) => sum + Number(o.total_income) + Number(o.manual_adjustment), 0);
+    const netRev = filteredOrders.reduce((sum: number, o: any) => sum + (Number(o.total_price) - Number(o.paypal_fee) - Number(o.shipping_fee || 0)), 0);
+    const exp = filteredExpenses.reduce((sum: number, e: any) => sum + (Number(e.amount_usd) * rates.aud), 0);
+    return {
+      totalIncome: income,
+      totalNetRevenue: netRev,
+      totalExpenses: exp,
+      netProfit: income - exp,
+      totalOrders: filteredOrders.length
+    };
+  }, [filteredOrders, filteredExpenses, rates.aud]);
   
-  const returningCustomers = customers.filter(c => Number(c.lifetime_orders) > 1).length;
+  const returningCustomers = customers.filter((c: any) => Number(c.lifetime_orders) > 1).length;
   const retentionRate = customers.length > 0 ? ((returningCustomers / customers.length) * 100).toFixed(1) : "0.0";
 
   // 2. Identify Sleepy Customers (60 days no order)
@@ -71,24 +78,21 @@ export default function DashboardClient({ projects, orders, customers, expenses 
     return diffDays > 60;
   });
 
-  // 3. Calculate Top Projects by Income
-  const projectIncomeMap: Record<string, number> = {};
-  filteredOrders.forEach(o => {
-    if (!projectIncomeMap[o.project_id]) projectIncomeMap[o.project_id] = 0;
-    projectIncomeMap[o.project_id] += Number(o.total_income);
-  });
-
-  const topProjects = isAdmin ? projects
-    .map(p => ({
-      ...p,
-      total_income: projectIncomeMap[p.id] || 0,
-      order_count: filteredOrders.filter(o => o.project_id === p.id).length
-    }))
-    .sort((a, b) => b.total_income - a.total_income)
-    : projects.map(p => ({...p, total_income: 0, order_count: 0}));
-
-  // Limit rendering to Left Column cards
-  const renderingTopProjects = topProjects;
+  const topProjects = useMemo(() => {
+    if (!isAdmin) return projects.map((p: any) => ({...p, total_income: 0, order_count: 0}));
+    const incomeMap: Record<string, number> = {};
+    filteredOrders.forEach((o: any) => {
+      if (!incomeMap[o.project_id]) incomeMap[o.project_id] = 0;
+      incomeMap[o.project_id] += Number(o.total_income);
+    });
+    return projects
+      .map((p: any) => ({
+        ...p,
+        total_income: incomeMap[p.id] || 0,
+        order_count: filteredOrders.filter((o: any) => o.project_id === p.id).length
+      }))
+      .sort((a: any, b: any) => b.total_income - a.total_income);
+  }, [isAdmin, projects, filteredOrders]);
 
   return (
     <div className="p-4 pt-16 md:p-8 md:pt-8 h-full flex flex-col overflow-y-auto">
@@ -227,7 +231,7 @@ export default function DashboardClient({ projects, orders, customers, expenses 
                        </div>
                     </div>
                  </Link>
-              ) : renderingTopProjects.length > 0 ? renderingTopProjects.map((p, idx) => (
+              ) : topProjects.length > 0 ? topProjects.map((p: any, idx: number) => (
                 <Link href={`/crm?project=${p.id}`} key={p.id} className="cursor-pointer block">
                   <div className="flex flex-col p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-300 hover:shadow-md transition-all group h-full">
                     {/* Top Section: Avatar & Name */}

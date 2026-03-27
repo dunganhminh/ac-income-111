@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Trash2, TrendingDown, DollarSign, Calendar, Search, Download } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plus, Trash2, TrendingDown, Calendar, Search, Download } from "lucide-react";
 import { addExpenseAction, deleteExpenseAction } from "./actions";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import * as ExcelJS from "exceljs";
@@ -20,13 +20,11 @@ export default function ExpensesClient({ initialProjects, initialExpenses, initi
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isExporting, setIsExporting] = useState(false);
 
-  const filteredExpenses = initialExpenses.filter(e => {
-    // Basic Search
+  const filteredExpenses = useMemo(() => initialExpenses.filter((e: any) => {
     const matchesSearch = 
       e.reason.toLowerCase().includes(search.toLowerCase()) || 
       (e.projects?.name || "").toLowerCase().includes(search.toLowerCase());
 
-    // Date Filtering based on expense_date
     let matchesDate = true;
     if (dateFilter !== 'all') {
       const dOptions = e.expense_date || e.created_at;
@@ -45,10 +43,10 @@ export default function ExpensesClient({ initialProjects, initialExpenses, initi
     }
 
     return matchesSearch && matchesDate;
-  });
+  }), [initialExpenses, search, dateFilter, startDate, endDate]);
 
   const rates = initialRates || { aud: 1.5, vnd: 25500 };
-  const totalUsdSpent = filteredExpenses.reduce((sum, e) => sum + Number(e.amount_usd), 0);
+  const totalUsdSpent = useMemo(() => filteredExpenses.reduce((sum: number, e: any) => sum + Number(e.amount_usd), 0), [filteredExpenses]);
   const totalAudSpent = totalUsdSpent * Number(rates.aud);
 
   const formatMoney = (amount: number, currency: string) => {

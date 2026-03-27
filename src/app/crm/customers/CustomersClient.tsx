@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, Filter, Copy, ExternalLink, CalendarClock, Download, Calendar, Trash2, Loader2, X } from "lucide-react";
+import { Search, Copy, CalendarClock, Download, Calendar, Trash2, Loader2, X } from "lucide-react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import * as ExcelJS from "exceljs";
 
@@ -485,7 +485,7 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
             
             <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0 text-right">
               <div className="text-xs text-slate-500 font-medium tracking-wide">
-                <span>Tổng số đơn đã mua:</span> <span className="font-bold text-slate-800 text-sm ml-1 mr-4">{(selectedCustomerForHistory.orders || []).length}</span> 
+                <span>Tổng số đơn đã mua:</span> <span className="font-bold text-slate-800 text-sm ml-1 mr-4">{historyOrders.length}</span> 
                 <span>Tổng chi tiêu LTV:</span> <span className="font-bold text-indigo-600 text-sm ml-1">{Number(selectedCustomerForHistory.lifetime_spent).toFixed(2)} AUD</span>
               </div>
             </div>
