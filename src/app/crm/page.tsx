@@ -14,31 +14,22 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   // Fetch overarching context data for all projects
   const { data: projects, error: pErr } = await supabase.from('projects').select('*').is('deleted_at', null);
-  
-  // Queries (Optimized columns to save Vercel RAM, but load recursively using fetchAllSupabase)
-  let oQuery = supabase.from('orders')
-    .select('id, project_id, status, total_price, shipping_fee, paypal_fee, total_income, manual_adjustment, created_at')
-    .is('deleted_at', null)
-    .not('status', 'in', '("cancelled","refunded","failed","trash")');
-    
-  let cQuery = supabase.from('customers')
-    .select('id, project_id, lifetime_orders, last_order_date')
-    .is('deleted_at', null);
-    
-  let exQuery = supabase.from('expenses')
-    .select('id, project_id, amount_usd, expense_date, created_at')
-    .is('deleted_at', null);
+  const oFilters = projectId
+    ? (q: any) => q.eq("project_id", projectId).is("deleted_at", null).not("status", "in", '("cancelled","refunded","failed","trash")')
+    : (q: any) => q.is("deleted_at", null).not("status", "in", '("cancelled","refunded","failed","trash")');
 
-  if (projectId) {
-    oQuery = oQuery.eq('project_id', projectId);
-    cQuery = cQuery.eq('project_id', projectId);
-    exQuery = exQuery.eq('project_id', projectId);
-  }
+  const cFilters = projectId
+    ? (q: any) => q.eq("project_id", projectId).is("deleted_at", null)
+    : (q: any) => q.is("deleted_at", null);
+
+  const exFilters = projectId
+    ? (q: any) => q.eq("project_id", projectId).is("deleted_at", null)
+    : (q: any) => q.is("deleted_at", null);
 
   const [ {data: orders, error: oErr}, {data: customers, error: cErr}, {data: expenses, error: exErr} ] = await Promise.all([
-    fetchAllSupabase(oQuery),
-    fetchAllSupabase(cQuery),
-    fetchAllSupabase(exQuery)
+    fetchAllSupabase("orders", "id, project_id, status, total_price, shipping_fee, paypal_fee, total_income, manual_adjustment, created_at", oFilters),
+    fetchAllSupabase("customers", "id, project_id, lifetime_orders, last_order_date", cFilters),
+    fetchAllSupabase("expenses", "id, project_id, amount_usd, expense_date, created_at", exFilters)
   ]);
 
   const { data: ratesSetting } = await supabase

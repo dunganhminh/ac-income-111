@@ -8,17 +8,16 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   const params = await searchParams;
   const projectId = params.project;
 
-  let query = supabase
-    .from("orders")
-    .select("id, project_id, order_number, created_at, status, total_price, shipping_fee, paypal_fee, total_income, manual_adjustment, products_summary, utm_source, customer:customer_id(full_name, email, phone)")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false });
+  const filters = projectId 
+    ? (q: any) => q.eq("project_id", projectId).is("deleted_at", null) 
+    : (q: any) => q.is("deleted_at", null);
 
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data: orders, error: oErr } = await fetchAllSupabase(query);
+  const { data: orders, error: oErr } = await fetchAllSupabase(
+    "orders",
+    "id, project_id, order_number, created_at, status, total_price, shipping_fee, paypal_fee, total_income, manual_adjustment, products_summary, utm_source, customer:customer_id(full_name, email, phone)",
+    filters,
+    { column: "created_at", options: { ascending: false } }
+  );
 
   if (oErr) {
     return <div className="p-8 text-red-500 font-bold">Lỗi tải dữ liệu Đơn hàng: {oErr.message}</div>;

@@ -16,22 +16,16 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
   }
   const { data: projects, error: pErr } = await supabase.from("projects").select("*").is("deleted_at", null);
   
-  let query = supabase
-    .from("expenses")
-    .select(`
-      id, project_id, amount_usd, reason, expense_date, created_at, amount, currency,
-      projects (
-        name
-      )
-    `)
-    .is("deleted_at", null)
-    .order("expense_date", { ascending: false });
+  const filters = projectId 
+    ? (q: any) => q.eq("project_id", projectId).is("deleted_at", null) 
+    : (q: any) => q.is("deleted_at", null);
 
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-
-  const { data: expenses, error: eErr } = await fetchAllSupabase(query);
+  const { data: expenses, error: eErr } = await fetchAllSupabase(
+    "expenses",
+    `id, project_id, amount_usd, reason, expense_date, created_at, amount, currency, projects(name)`,
+    filters,
+    { column: "expense_date", options: { ascending: false } }
+  );
 
   const { data: ratesSetting } = await supabase
     .from("system_settings")

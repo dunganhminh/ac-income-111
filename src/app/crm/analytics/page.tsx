@@ -16,29 +16,23 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   }
   const { data: projects } = await supabase.from("projects").select("*");
 
-  let query = supabase
-    .from("orders")
-    .select("*")
-    .is("deleted_at", null);
+  // orders
+  const ordersFilters = projectId 
+    ? (q: any) => q.eq("project_id", projectId).is("deleted_at", null) 
+    : (q: any) => q.is("deleted_at", null);
+  const { data: orders } = await fetchAllSupabase("orders", "*", ordersFilters);
 
-  if (projectId) {
-    query = query.eq("project_id", projectId);
-  }
-  const { data: orders } = await fetchAllSupabase(query);
+  // expenses
+  const expFilters = projectId 
+    ? (q: any) => q.eq("project_id", projectId).is("deleted_at", null) 
+    : (q: any) => q.is("deleted_at", null);
+  const { data: expenses } = await fetchAllSupabase("expenses", "*", expFilters);
 
-  let expensesQuery = supabase
-    .from("expenses")
-    .select("*")
-    .is("deleted_at", null);
-
-  if (projectId) {
-    expensesQuery = expensesQuery.eq("project_id", projectId);
-  }
-  const { data: expenses } = await fetchAllSupabase(expensesQuery);
-
-  let custQuery = supabase.from("customers").select("*");
-  if (projectId) custQuery = custQuery.eq("project_id", projectId);
-  const { data: customers } = await fetchAllSupabase(custQuery);
+  // customers
+  const custFilters = projectId 
+    ? (q: any) => q.eq("project_id", projectId).is("deleted_at", null)
+    : (q: any) => q.is("deleted_at", null);
+  const { data: customers } = await fetchAllSupabase("customers", "*", custFilters);
 
   const { data: ratesSetting } = await supabase
     .from("system_settings")
