@@ -27,10 +27,27 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
   // History Modal State
   const [selectedCustomerForHistory, setSelectedCustomerForHistory] = useState<any | null>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [historyOrders, setHistoryOrders] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  const openHistory = (c: any) => {
+  const openHistory = async (c: any) => {
     setSelectedCustomerForHistory(c);
     setIsHistoryModalOpen(true);
+    setHistoryOrders([]);
+    setIsLoadingHistory(true);
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      const { data } = await supabase
+        .from("orders")
+        .select("id, order_number, created_at, products_summary, total_price, status")
+        .eq("customer_id", c.id)
+        .order("created_at", { ascending: false });
+      if (data) setHistoryOrders(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
   };
 
   const filteredCustomers = localCustomers.filter((c) => {
@@ -420,8 +437,15 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
-                  {(selectedCustomerForHistory.orders || []).length > 0 ? (
-                    (selectedCustomerForHistory.orders || []).sort((a:any, b:any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((order: any) => (
+                  {isLoadingHistory ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-500 font-medium">
+                        <Loader2 className="w-5 h-5 animate-spin mr-2 inline-block text-slate-400" />
+                        Đang lấy lịch sử mua hàng...
+                      </td>
+                    </tr>
+                  ) : historyOrders.length > 0 ? (
+                    historyOrders.sort((a:any, b:any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((order: any) => (
                       <tr key={order.id} className="hover:bg-slate-50">
                         <td className="px-5 py-3 text-slate-600">{new Date(order.created_at).toLocaleDateString()}</td>
                         <td className="px-5 py-3 font-semibold text-slate-700">{order.order_number}</td>
