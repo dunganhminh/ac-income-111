@@ -52,7 +52,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
   }, [initialOrders, appliedSearch, statusFilter, dateFilter, startDate, endDate]);
 
   // Calculate Summary
-  const { validOrders, totalGross, totalFees, totalShipping, totalNet, totalIncome, totalQty } = useMemo(() => {
+  const { validOrders, totalGross, totalFees, totalShipping, totalIncome, totalQty } = useMemo(() => {
     const valid = filteredOrders.filter((o: any) => !['cancelled', 'refunded', 'failed', 'trash'].includes(o.status));
     const gross = valid.reduce((sum: number, o: any) => sum + Number(o.total_price || 0), 0);
     const fees = valid.reduce((sum: number, o: any) => sum + Number(o.paypal_fee || 0), 0);
@@ -70,7 +70,6 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
       totalGross: gross,
       totalFees: fees,
       totalShipping: shipping,
-      totalNet: gross - fees - shipping,
       totalIncome: income,
       totalQty: qty
     };
@@ -314,7 +313,6 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
                   <th className="px-5 py-4 text-center">Dự Án</th>
                   {isAdmin && (
                     <>
-                      <th className="px-5 py-4 text-right">Net Rev</th>
                       <th className="px-5 py-4 text-right text-blue-600">INCOME</th>
                     </>
                   )}
@@ -326,7 +324,6 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
             {filteredOrders.length > 0 ? filteredOrders.map((order) => {
               const customer = order.customer || order.customers || {};
               const products = order.products_summary || [];
-              const net = Number(order.total_price) - Number(order.paypal_fee) - Number(order.shipping_fee || 0);
               const isInvalid = ['cancelled', 'refunded', 'failed', 'trash'].includes(order.status);
               const isSelected = selectedIds.includes(order.id);
               
@@ -376,14 +373,11 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
                         </span>
                       </td>
                       {isAdmin && (
-                         <>
-                           <td className="px-5 py-3 text-right font-bold text-slate-800">{net.toFixed(2)} AUD</td>
-                           <td className="px-5 py-3 text-right">
-                             <span className="inline-block bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-bold border border-blue-100">
-                               {(Number(order.total_income) + Number(order.manual_adjustment)).toFixed(2)} AUD
-                             </span>
-                           </td>
-                         </>
+                         <td className="px-5 py-3 text-right">
+                           <span className="inline-block bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md font-bold border border-blue-100">
+                             {(Number(order.total_income) + Number(order.manual_adjustment)).toFixed(2)} AUD
+                           </span>
+                         </td>
                       )}
                     </>
                   )}
@@ -391,7 +385,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
               );
             }) : (
               <tr>
-                <td colSpan={focusMode ? 5 : 9} className="py-20 text-center text-slate-500 font-medium">
+                <td colSpan={focusMode ? 5 : 8} className="py-20 text-center text-slate-500 font-medium">
                   Không tìm thấy đơn hàng nào khớp với tìm kiếm.
                 </td>
               </tr>
@@ -414,10 +408,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
                   <td className="px-5 py-4 text-right font-bold border-t border-slate-700">{totalGross.toFixed(2)} AUD</td>
                   <td className="px-5 py-4 border-t border-slate-700 text-center">-</td>
                   {isAdmin && (
-                     <>
-                        <td className="px-5 py-4 text-right font-bold text-green-300 border-t border-slate-700">{totalNet.toFixed(2)} AUD</td>
-                        <td className="px-5 py-4 text-right text-lg font-black text-blue-300 rounded-br-xl border-t border-slate-700">{totalIncome.toFixed(2)} AUD</td>
-                     </>
+                    <td className="px-5 py-4 text-right text-lg font-black text-blue-300 rounded-br-xl border-t border-slate-700">{totalIncome.toFixed(2)} AUD</td>
                   )}
                   {!isAdmin && <td className="rounded-br-xl border-t border-slate-700"></td>}
                 </>
