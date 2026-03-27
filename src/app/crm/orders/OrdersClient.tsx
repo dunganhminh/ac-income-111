@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Download, Filter, Search, Eye, EyeOff, CheckCircle2, Clock, XCircle, MoreVertical, Calendar, ShoppingCart, Plus } from "lucide-react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import * as ExcelJS from "exceljs";
@@ -21,46 +21,59 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
   const [isExporting, setIsExporting] = useState(false);
 
   // 1. Array Filtering
-  const filteredOrders = initialOrders.filter((o) => {
-    // Basic search
-    const term = search.toLowerCase();
-    const customer = o.customer || o.customers || {};
-    const matchesSearch = 
-      o.order_number.toLowerCase().includes(term) ||
-      (customer.full_name && customer.full_name.toLowerCase().includes(term)) ||
-      (customer.email && customer.email.toLowerCase().includes(term));
+  const filteredOrders = useMemo(() => {
+    return initialOrders.filter((o: any) => {
+      // Basic search
+      const term = search.toLowerCase();
+      const customer = o.customer || o.customers || {};
+      const matchesSearch = 
+        o.order_number.toLowerCase().includes(term) ||
+        (customer.full_name && customer.full_name.toLowerCase().includes(term)) ||
+        (customer.email && customer.email.toLowerCase().includes(term));
 
-    const matchesStatus = statusFilter === "all" || o.status === statusFilter;
-    
-    // Date Filtering
-    let matchesDate = true;
-    if (dateFilter !== 'all') {
-      const od = new Date(o.created_at);
-      if (dateFilter === 'today') matchesDate = isToday(od);
-      else if (dateFilter === 'week') matchesDate = isThisWeek(od, { weekStartsOn: 1 });
-      else if (dateFilter === 'month') matchesDate = isThisMonth(od);
-      else if (dateFilter === 'year') matchesDate = isThisYear(od);
-      else if (dateFilter === 'custom' && startDate && endDate) {
-        matchesDate = isWithinInterval(od, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
+      const matchesStatus = statusFilter === "all" || o.status === statusFilter;
+      
+      // Date Filtering
+      let matchesDate = true;
+      if (dateFilter !== 'all') {
+        const od = new Date(o.created_at);
+        if (dateFilter === 'today') matchesDate = isToday(od);
+        else if (dateFilter === 'week') matchesDate = isThisWeek(od, { weekStartsOn: 1 });
+        else if (dateFilter === 'month') matchesDate = isThisMonth(od);
+        else if (dateFilter === 'year') matchesDate = isThisYear(od);
+        else if (dateFilter === 'custom' && startDate && endDate) {
+          matchesDate = isWithinInterval(od, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
+        }
       }
-    }
 
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }, [initialOrders, search, statusFilter, dateFilter, startDate, endDate]);
 
   // Calculate Summary
-  const validOrders = filteredOrders.filter(o => !['cancelled', 'refunded', 'failed', 'trash'].includes(o.status));
-  const totalGross = validOrders.reduce((sum, o) => sum + Number(o.total_price), 0);
-  const totalFees = validOrders.reduce((sum, o) => sum + Number(o.paypal_fee), 0);
-  const totalShipping = validOrders.reduce((sum, o) => sum + Number(o.shipping_fee || 0), 0);
-  const totalNet = totalGross - totalFees - totalShipping;
-  const totalIncome = validOrders.reduce((sum, o) => sum + Number(o.total_income) + Number(o.manual_adjustment), 0);
-  
-  let totalQty = 0;
-  validOrders.forEach(o => {
-    const prods = o.products_summary || [];
-    prods.forEach((p: any) => totalQty += Number(p.quantity || 1));
-  });
+  const { validOrders, totalGross, totalFees, totalShipping, totalNet, totalIncome, totalQty } = useMemo(() => {
+    const valid = filteredOrders.filter((o: any) => !['cancelled', 'refunded', 'failed', 'trash'].includes(o.status));
+    const gross = valid.reduce((sum: number, o: any) => sum + Number(o.total_price || 0), 0);
+    const fees = valid.reduce((sum: number, o: any) => sum + Number(o.paypal_fee || 0), 0);
+    const shipping = valid.reduce((sum: number, o: any) => sum + Number(o.shipping_fee || 0), 0);
+    const income = valid.reduce((sum: number, o: any) => sum + Number(o.total_income || 0) + Number(o.manual_adjustment || 0), 0);
+    
+    let qty = 0;
+    valid.forEach((o: any) => {
+      const prods = o.products_summary || [];
+      prods.forEach((p: any) => qty += Number(p.quantity || 1));
+    });
+
+    return {
+      validOrders: valid,
+      totalGross: gross,
+      totalFees: fees,
+      totalShipping: shipping,
+      totalNet: gross - fees - shipping,
+      totalIncome: income,
+      totalQty: qty
+    };
+  }, [filteredOrders]);
 
   // Checkbox Handlers
   const handleSelectAll = (checked: boolean) => {

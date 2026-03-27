@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Search, Filter, Copy, ExternalLink, CalendarClock, Download, Calendar, Trash2, Loader2, X } from "lucide-react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import * as ExcelJS from "exceljs";
@@ -50,35 +50,37 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
     }
   };
 
-  const filteredCustomers = localCustomers.filter((c) => {
-    // Basic search
-    const term = search.toLowerCase();
-    const matchesSearch = 
-      (c.full_name && c.full_name.toLowerCase().includes(term)) ||
-      (c.email && c.email.toLowerCase().includes(term)) ||
-      (c.phone && c.phone.includes(term)) ||
-      (c.tags && c.tags.some((t: string) => t.toLowerCase().includes(term)));
+  const filteredCustomers = useMemo(() => {
+    return localCustomers.filter((c: any) => {
+      // Basic search
+      const term = search.toLowerCase();
+      const matchesSearch = 
+        (c.full_name && c.full_name.toLowerCase().includes(term)) ||
+        (c.email && c.email.toLowerCase().includes(term)) ||
+        (c.phone && c.phone.includes(term)) ||
+        (c.tags && c.tags.some((t: string) => t.toLowerCase().includes(term)));
 
-    // Date Filtering based on last_order_date or created_at
-    let matchesDate = true;
-    if (dateFilter !== 'all') {
-      const dOptions = c.last_order_date || c.created_at;
-      if (!dOptions) {
-        matchesDate = false;
-      } else {
-        const d = new Date(dOptions);
-        if (dateFilter === 'today') matchesDate = isToday(d);
-        else if (dateFilter === 'week') matchesDate = isThisWeek(d, { weekStartsOn: 1 });
-        else if (dateFilter === 'month') matchesDate = isThisMonth(d);
-        else if (dateFilter === 'year') matchesDate = isThisYear(d);
-        else if (dateFilter === 'custom' && startDate && endDate) {
-          matchesDate = isWithinInterval(d, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
+      // Date Filtering based on last_order_date or created_at
+      let matchesDate = true;
+      if (dateFilter !== 'all') {
+        const dOptions = c.last_order_date || c.created_at;
+        if (!dOptions) {
+          matchesDate = false;
+        } else {
+          const d = new Date(dOptions);
+          if (dateFilter === 'today') matchesDate = isToday(d);
+          else if (dateFilter === 'week') matchesDate = isThisWeek(d, { weekStartsOn: 1 });
+          else if (dateFilter === 'month') matchesDate = isThisMonth(d);
+          else if (dateFilter === 'year') matchesDate = isThisYear(d);
+          else if (dateFilter === 'custom' && startDate && endDate) {
+            matchesDate = isWithinInterval(d, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
+          }
         }
       }
-    }
 
-    return matchesSearch && matchesDate;
-  });
+      return matchesSearch && matchesDate;
+    });
+  }, [localCustomers, search, dateFilter, startDate, endDate]);
 
   // Checkbox Handlers
   const handleSelectAll = (checked: boolean) => {
