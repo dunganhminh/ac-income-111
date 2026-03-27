@@ -226,24 +226,38 @@ export default function DashboardClient({ projects, orders, customers, expenses 
                  </Link>
               ) : renderingTopProjects.length > 0 ? renderingTopProjects.map((p, idx) => (
                 <Link href={`/crm?project=${p.id}`} key={p.id} className="cursor-pointer block">
-                  <div className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-300 hover:shadow-md transition-all group h-full">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg ${isAdmin ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-600'}`}>
+                  <div className="flex flex-col p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-blue-300 hover:shadow-md transition-all group h-full">
+                    {/* Top Section: Avatar & Name */}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg shrink-0 ${isAdmin ? 'bg-blue-100 text-blue-700' : 'bg-slate-200 text-slate-600'}`}>
                         {isAdmin ? `#${idx + 1}` : p.name.charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <div className="font-bold text-slate-800 text-base group-hover:text-blue-600 transition-colors leading-tight mb-0.5">{p.name || "Web Không Tên"}</div>
-                        <span className="text-[10px] text-blue-500 font-medium uppercase tracking-wider">{p.website_url ? new URL(p.website_url).hostname : "Chưa gắn Link"}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-slate-800 text-base group-hover:text-blue-600 transition-colors truncate">{p.name || "Web Không Tên"}</div>
+                        <span className="text-[10px] text-slate-400 font-medium tracking-wider truncate block">{p.website_url ? new URL(p.website_url).hostname : "Chưa gắn Link"}</span>
                       </div>
+                      {!isAdmin && (
+                        <div className="text-blue-600 shrink-0">
+                          <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      )}
                     </div>
-                    {isAdmin ? (
-                      <div className="text-right">
-                        <div className="font-black text-lg text-slate-800">{formatCurrency(p.total_income)}</div>
-                        <div className="text-[11px] font-bold text-slate-400">{p.order_count} Đơn hàng</div>
-                      </div>
-                    ) : (
-                      <div className="text-blue-600 pr-2">
-                        <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+
+                    {/* Bottom Section: Income & Orders */}
+                    {isAdmin && (
+                      <div className="flex justify-between items-center pt-3 mt-3 border-t border-slate-200/60">
+                         <div className="flex items-center gap-1.5">
+                           <div className="w-6 h-6 rounded bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                             <DollarSign className="w-3.5 h-3.5" />
+                           </div>
+                           <div className="font-black text-sm text-slate-800 leading-none">{formatCurrency(p.total_income)}</div>
+                         </div>
+                         <div className="flex items-center gap-1.5">
+                           <div className="w-6 h-6 rounded bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                             <ShoppingCart className="w-3.5 h-3.5" />
+                           </div>
+                           <div className="text-[11px] font-bold text-slate-500 leading-none">{p.order_count} Đơn</div>
+                         </div>
                       </div>
                     )}
                   </div>
