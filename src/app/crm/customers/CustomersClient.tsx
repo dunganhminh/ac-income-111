@@ -7,6 +7,7 @@ import * as ExcelJS from "exceljs";
 
 export default function CustomersClient({ initialCustomers }: { initialCustomers: any[] }) {
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Date Filter State
@@ -53,7 +54,7 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
   const filteredCustomers = useMemo(() => {
     return localCustomers.filter((c: any) => {
       // Basic search
-      const term = search.toLowerCase();
+      const term = appliedSearch.toLowerCase();
       const matchesSearch = 
         (c.full_name && c.full_name.toLowerCase().includes(term)) ||
         (c.email && c.email.toLowerCase().includes(term)) ||
@@ -80,7 +81,7 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
 
       return matchesSearch && matchesDate;
     });
-  }, [localCustomers, search, dateFilter, startDate, endDate]);
+  }, [localCustomers, appliedSearch, dateFilter, startDate, endDate]);
 
   // Checkbox Handlers
   const handleSelectAll = (checked: boolean) => {
@@ -310,8 +311,17 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
             placeholder="Tìm tên, email, SDT, hoặc tên Tag..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') setAppliedSearch(search);
+            }}
             className="bg-transparent border-none outline-none flex-1 text-slate-700 placeholder:text-slate-400" 
           />
+          <button 
+            onClick={() => setAppliedSearch(search)}
+            className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1 rounded text-xs font-bold transition-colors shadow-sm ml-1"
+          >
+            Tìm
+          </button>
         </div>
       </div>
 

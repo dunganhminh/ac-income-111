@@ -9,6 +9,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
   const isAdmin = role === 'admin';
   const [focusMode, setFocusMode] = useState(false);
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
   // Date Filter State
@@ -24,7 +25,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
   const filteredOrders = useMemo(() => {
     return initialOrders.filter((o: any) => {
       // Basic search
-      const term = search.toLowerCase();
+      const term = appliedSearch.toLowerCase();
       const customer = o.customer || o.customers || {};
       const matchesSearch = 
         o.order_number.toLowerCase().includes(term) ||
@@ -48,7 +49,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
 
       return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [initialOrders, search, statusFilter, dateFilter, startDate, endDate]);
+  }, [initialOrders, appliedSearch, statusFilter, dateFilter, startDate, endDate]);
 
   // Calculate Summary
   const { validOrders, totalGross, totalFees, totalShipping, totalNet, totalIncome, totalQty } = useMemo(() => {
@@ -251,8 +252,17 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
             placeholder="Tìm mã đơn, tên, email..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') setAppliedSearch(search);
+            }}
             className="bg-transparent border-none outline-none flex-1 text-slate-700 placeholder:text-slate-400" 
           />
+          <button 
+            onClick={() => setAppliedSearch(search)}
+            className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1 rounded text-xs font-bold transition-colors shadow-sm ml-1"
+          >
+            Tìm
+          </button>
         </div>
         
         <div className="flex gap-3 items-center w-full md:w-auto flex-wrap">

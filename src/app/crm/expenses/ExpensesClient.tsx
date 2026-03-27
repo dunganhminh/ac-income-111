@@ -10,6 +10,7 @@ export default function ExpensesClient({ initialProjects, initialExpenses, initi
   const [isAdding, setIsAdding] = useState(false);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
 
   // Date Filter State
   const [dateFilter, setDateFilter] = useState<'today' | 'week' | 'month' | 'year' | 'custom' | 'all'>('all');
@@ -21,9 +22,10 @@ export default function ExpensesClient({ initialProjects, initialExpenses, initi
   const [isExporting, setIsExporting] = useState(false);
 
   const filteredExpenses = useMemo(() => initialExpenses.filter((e: any) => {
+    const term = appliedSearch.toLowerCase();
     const matchesSearch = 
-      e.reason.toLowerCase().includes(search.toLowerCase()) || 
-      (e.projects?.name || "").toLowerCase().includes(search.toLowerCase());
+      e.reason.toLowerCase().includes(term) || 
+      (e.projects?.name || "").toLowerCase().includes(term);
 
     let matchesDate = true;
     if (dateFilter !== 'all') {
@@ -43,7 +45,7 @@ export default function ExpensesClient({ initialProjects, initialExpenses, initi
     }
 
     return matchesSearch && matchesDate;
-  }), [initialExpenses, search, dateFilter, startDate, endDate]);
+  }), [initialExpenses, appliedSearch, dateFilter, startDate, endDate]);
 
   const rates = initialRates || { aud: 1.5, vnd: 25500 };
   const totalUsdSpent = useMemo(() => filteredExpenses.reduce((sum: number, e: any) => sum + Number(e.amount_usd), 0), [filteredExpenses]);
@@ -168,8 +170,17 @@ export default function ExpensesClient({ initialProjects, initialExpenses, initi
             placeholder="Tìm lý do, hoặc tên Web..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') setAppliedSearch(search);
+            }}
             className="bg-transparent border-none outline-none flex-1 font-medium text-slate-700" 
           />
+          <button 
+            onClick={() => setAppliedSearch(search)}
+            className="bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-1 rounded text-xs font-bold transition-colors shadow-sm ml-1"
+          >
+            Tìm
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
