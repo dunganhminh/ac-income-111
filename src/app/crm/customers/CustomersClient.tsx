@@ -20,7 +20,9 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
   const [isDeleting, setIsDeleting] = useState(false);
   
   // Local Data State so we can remove instantly without full reload
-  const [localCustomers, setLocalCustomers] = useState<any[]>(initialCustomers);
+  const [localCustomers, setLocalCustomers] = useState<any[]>(() => {
+    return [...(initialCustomers || [])].sort((a, b) => Number(b.lifetime_spent || 0) - Number(a.lifetime_spent || 0));
+  });
 
   // History Modal State
   const [selectedCustomerForHistory, setSelectedCustomerForHistory] = useState<any | null>(null);
