@@ -44,7 +44,7 @@ export default function LeadsClient({ initialLeads }: { initialLeads: Lead[] }) 
   };
 
   return (
-    <div className="p-8 h-full flex flex-col">
+    <div className="p-4 pt-16 md:p-8 md:pt-8 h-full flex flex-col">
       {/* Page Header */}
       <div className="flex justify-between items-center mb-6 shrink-0">
         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Leads</h1>

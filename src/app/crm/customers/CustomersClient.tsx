@@ -199,7 +199,7 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
   };
 
   return (
-    <div className="p-8 h-full flex flex-col">
+    <div className="p-4 pt-16 md:p-8 md:pt-8 h-full flex flex-col">
       {/* Header & Main Date Filter */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 shrink-0 gap-4">
         <div>

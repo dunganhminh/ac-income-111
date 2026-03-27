@@ -146,7 +146,7 @@ export default function ExpensesClient({ initialProjects, initialExpenses, initi
   };
 
   return (
-    <div className="p-4 md:p-8 h-full flex flex-col font-sans">
+    <div className="p-4 pt-16 md:p-8 md:pt-8 h-full flex flex-col font-sans">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 shrink-0 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">

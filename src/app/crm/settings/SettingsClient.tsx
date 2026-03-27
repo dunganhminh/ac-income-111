@@ -248,7 +248,7 @@ export default function SettingsClient({ initialProjects, initialUsers, initialR
   };
 
   return (
-    <div className="p-8 h-full flex flex-col overflow-y-auto">
+    <div className="p-4 pt-16 md:p-8 md:pt-8 h-full flex flex-col overflow-y-auto">
       <div className="flex justify-between items-center mb-8 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Cài Đặt Hệ Thống</h1>

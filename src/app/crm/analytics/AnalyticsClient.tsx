@@ -282,7 +282,7 @@ export default function AnalyticsClient({
   const topVIPs = Object.values(customerLtv).sort((a, b) => b.income - a.income).slice(0, 5);
 
   return (
-    <div className="p-8 h-full flex flex-col overflow-y-auto">
+    <div className="p-4 pt-16 md:p-8 md:pt-8 h-full flex flex-col overflow-y-auto">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Analytics & Báo Cáo Đo Lường</h1>
