@@ -126,7 +126,8 @@ export async function processWooCommerceOrder(payload: any, projectId: string, p
     totalIncome = 0;
   }
   
-  const orderDate = date_created || new Date().toISOString();
+  // Use date_created_gmt for accurate UTC timing instead of site-specific date_created
+  const orderDate = payload.date_created_gmt || new Date().toISOString();
   const orderTotalFormatted = Number(total);
 
   // CRM: FIND OR CREATE CUSTOMER

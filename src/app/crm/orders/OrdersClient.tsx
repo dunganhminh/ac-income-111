@@ -2,8 +2,13 @@
 
 import { useState, useMemo, useRef } from "react";
 import { Download, Search, Eye, EyeOff, CheckCircle2, Clock, XCircle, Calendar, ShoppingCart } from "lucide-react";
-import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
+import { isSameDay, isSameWeek, isSameMonth, isSameYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import * as ExcelJS from "exceljs";
+
+// Helper to get a Date object that represents the Sydney wall-clock time in the local JS environment
+const toSydneyWallClock = (date: Date | string) => {
+  return new Date(new Date(date).toLocaleString('en-US', { timeZone: 'Australia/Sydney' }));
+};
 
 export default function OrdersClient({ initialOrders, initialProjects = [], role = 'admin' }: { initialOrders: any[], initialProjects?: any[], role?: string }) {
   const isAdmin = role === 'admin';
@@ -23,6 +28,8 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
 
   // 1. Array Filtering
   const filteredOrders = useMemo(() => {
+    const sydneyNow = toSydneyWallClock(new Date());
+
     return initialOrders.filter((o: any) => {
       // Basic search
       const term = appliedSearch.toLowerCase();
@@ -37,13 +44,14 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
       // Date Filtering
       let matchesDate = true;
       if (dateFilter !== 'all') {
-        const od = new Date(o.created_at);
-        if (dateFilter === 'today') matchesDate = isToday(od);
-        else if (dateFilter === 'week') matchesDate = isThisWeek(od, { weekStartsOn: 1 });
-        else if (dateFilter === 'month') matchesDate = isThisMonth(od);
-        else if (dateFilter === 'year') matchesDate = isThisYear(od);
+        const odSydney = toSydneyWallClock(o.created_at);
+        if (dateFilter === 'today') matchesDate = isSameDay(odSydney, sydneyNow);
+        else if (dateFilter === 'week') matchesDate = isSameWeek(odSydney, sydneyNow, { weekStartsOn: 1 });
+        else if (dateFilter === 'month') matchesDate = isSameMonth(odSydney, sydneyNow);
+        else if (dateFilter === 'year') matchesDate = isSameYear(odSydney, sydneyNow);
         else if (dateFilter === 'custom' && startDate && endDate) {
-          matchesDate = isWithinInterval(od, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
+          // Giao diện chọn ngày ngầm hiểu là ngày Sydney, nên đổi text sang Date object
+          matchesDate = isWithinInterval(odSydney, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
         }
       }
 
@@ -129,7 +137,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
         
         const rowData: any = {
           order_number: o.order_number,
-          date: new Date(o.created_at).toLocaleString(),
+          date: new Date(o.created_at).toLocaleString('en-US', { timeZone: 'Australia/Sydney' }),
           customer_name: customer.full_name || "Guest",
           customer_email: customer.email || "-",
           products: productsStr,
@@ -339,7 +347,7 @@ export default function OrdersClient({ initialOrders, initialProjects = [], role
                   </td>
                   <td className="px-5 py-3">
                     <span className="font-bold text-slate-800">#{order.order_number}</span>
-                    <div className="text-[11px] text-slate-400 mt-0.5">{new Date(order.created_at).toLocaleDateString()}</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">{new Date(order.created_at).toLocaleString('en-US', { timeZone: 'Australia/Sydney' })}</div>
                   </td>
                   <td className="px-5 py-3">
                     <div className="font-semibold text-slate-800">{customer.full_name || "Guest"}</div>
