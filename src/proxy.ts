@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Check if trying to access /crm or any sub-route
   if (request.nextUrl.pathname.startsWith('/crm')) {
     const userId = request.cookies.get('crm_user_id')?.value;

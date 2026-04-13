@@ -232,7 +232,7 @@ function TableRow({ lead, getBadgeColors, getStatusLabel, getStatusDot }: any) {
         </div>
       </td>
       <td className="px-6 py-4 text-slate-500">
-        {new Date(lead.created_at).toLocaleDateString()} <br/>
+        {new Date(lead.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh' })} <br/>
         <span className="text-xs text-slate-400">{lead.time_label}</span>
       </td>
       <td className="px-6 py-4 text-right relative">

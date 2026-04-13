@@ -114,12 +114,14 @@ export async function processWooCommerceOrder(payload: any, projectId: string, p
   const utmCampaign = getMeta('utm_campaign') || getMeta('_utm_campaign') || null;
 
   // Process rules
-  let { totalIncome, productsSummary, hasPack10 } = calculateIncomeAndQuantities(
+  const calculated = calculateIncomeAndQuantities(
     line_items, 
     projectSettings.income_rule_type, 
     projectSettings.income_percentage,
     projectSettings.income_rules
   );
+  let { totalIncome } = calculated;
+  const { productsSummary, hasPack10 } = calculated;
   
   // Xử lý đơn Hoàn / Huỷ -> Net Income = 0
   if (['refunded', 'cancelled', 'failed', 'trash'].includes(finalStatus)) {
@@ -134,7 +136,7 @@ export async function processWooCommerceOrder(payload: any, projectId: string, p
   let customerId = null;
   let existingCustomerTags: string[] = [];
   
-  let { data: existingCustomer } = await supabase
+  const { data: existingCustomer } = await supabase
     .from('customers')
     .select('id, tags')
     .eq('project_id', projectId)
@@ -146,7 +148,7 @@ export async function processWooCommerceOrder(payload: any, projectId: string, p
     existingCustomerTags = existingCustomer.tags || [];
   } else {
     // Insert initial empty customer
-    let initialTags: string[] = ['Khách mới']; 
+    const initialTags: string[] = ['Khách mới']; 
     if (hasPack10) initialTags.push('Pack 10 Lover');
 
     const { data: newCustomer, error: insertCustomerError } = await supabase
@@ -216,7 +218,7 @@ export async function processWooCommerceOrder(payload: any, projectId: string, p
   }
 
   // Update Customer Tags
-  let tags: string[] = [...existingCustomerTags];
+  const tags: string[] = [...existingCustomerTags];
   if (recalculatedOrders >= 5 && !tags.includes('VIP')) tags.push('VIP');
   if (hasPack10 && !tags.includes('Pack 10 Lover')) tags.push('Pack 10 Lover');
 

@@ -4,6 +4,8 @@ import { useState, useMemo, useRef } from "react";
 import { Search, Copy, CalendarClock, Download, Calendar, Trash2, Loader2, X } from "lucide-react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import * as ExcelJS from "exceljs";
+import { toVNTime } from "@/lib/time";
+
 
 export default function CustomersClient({ initialCustomers }: { initialCustomers: any[] }) {
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -68,7 +70,8 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
         if (!dOptions) {
           matchesDate = false;
         } else {
-          const d = new Date(dOptions);
+          const d = toVNTime(dOptions);
+          const vnNow = toVNTime();
           if (dateFilter === 'today') matchesDate = isToday(d);
           else if (dateFilter === 'week') matchesDate = isThisWeek(d, { weekStartsOn: 1 });
           else if (dateFilter === 'month') matchesDate = isThisMonth(d);
@@ -130,7 +133,7 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
           email: c.email || "-",
           phone: c.phone || "-",
           tags: (c.tags || []).join(", "),
-          last_order_date: c.last_order_date ? new Date(c.last_order_date).toLocaleString() : "Chưa từng mua",
+          last_order_date: c.last_order_date ? new Date(c.last_order_date).toLocaleString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh' }) : "Chưa từng mua",
           lifetime_orders: Number(c.lifetime_orders || 0),
           lifetime_spent: Number(c.lifetime_spent || 0)
         });
@@ -181,8 +184,8 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
 
   const getDaysSince = (dateString: string) => {
     if (!dateString) return "Chưa từng mua";
-    const lastOrder = new Date(dateString);
-    const today = new Date();
+    const lastOrder = toVNTime(dateString);
+    const today = toVNTime();
     const diffTime = Math.abs(today.getTime() - lastOrder.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
@@ -193,8 +196,8 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
 
   const getDaysBadgeColor = (dateString: string) => {
     if (!dateString) return "text-slate-400 bg-slate-50";
-    const lastOrder = new Date(dateString);
-    const diffTime = Math.abs(new Date().getTime() - lastOrder.getTime());
+    const lastOrder = toVNTime(dateString);
+    const diffTime = Math.abs(toVNTime().getTime() - lastOrder.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays <= 7) return "text-green-700 bg-green-50 border border-green-100";
@@ -383,7 +386,7 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
                       {getDaysSince(c.last_order_date)}
                     </span>
                     <div className="text-[11px] text-slate-400 mt-1.5 ml-1">
-                      {c.last_order_date ? new Date(c.last_order_date).toLocaleDateString() : ""}
+                      {c.last_order_date ? new Date(c.last_order_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh' }) : ""}
                     </div>
                   </td>
                   <td className="px-5 py-4 text-center">
@@ -459,7 +462,7 @@ export default function CustomersClient({ initialCustomers }: { initialCustomers
                   ) : historyOrders.length > 0 ? (
                     historyOrders.sort((a:any, b:any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map((order: any) => (
                       <tr key={order.id} className="hover:bg-slate-50">
-                        <td className="px-5 py-3 text-slate-600">{new Date(order.created_at).toLocaleDateString()}</td>
+                        <td className="px-5 py-3 text-slate-600">{new Date(order.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh' })}</td>
                         <td className="px-5 py-3 font-semibold text-slate-700">{order.order_number}</td>
                         <td className="px-5 py-3">
                           <div className="flex flex-col gap-1">

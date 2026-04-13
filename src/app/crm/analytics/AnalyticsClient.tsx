@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Activity, TrendingUp, DollarSign, Package, Calendar, Share2, Wallet, Users, Flame, ShieldAlert, BarChart3, Trophy, ArrowRight } from "lucide-react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, subWeeks, subMonths, subYears, differenceInDays } from "date-fns";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { toVNTime } from "@/lib/time";
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -28,11 +29,11 @@ export default function AnalyticsClient({
 
   // 1. Filter Orders and Define Previous Periods
   const getPeriods = () => {
-    let currentStart = new Date();
-    let currentEnd = new Date();
-    let prevStart = new Date();
-    let prevEnd = new Date();
-    const now = new Date();
+    let currentStart = toVNTime();
+    let currentEnd = toVNTime();
+    let prevStart = toVNTime();
+    let prevEnd = toVNTime();
+    const now = toVNTime();
 
     if (dateFilter === 'today') {
       currentStart = startOfDay(now);
@@ -74,12 +75,12 @@ export default function AnalyticsClient({
 
   if (periods) {
     initialOrders.forEach(o => {
-      const d = new Date(o.created_at);
+      const d = toVNTime(o.created_at);
       if (d >= periods.currentStart && d <= periods.currentEnd) filteredOrders.push(o);
       else if (d >= periods.prevStart && d <= periods.prevEnd) prevOrders.push(o);
     });
     initialExpenses.forEach(e => {
-      const d = new Date(e.expense_date || e.created_at || e.date || new Date());
+      const d = toVNTime(e.expense_date || e.created_at || e.date || new Date());
       if (d >= periods.currentStart && d <= periods.currentEnd) filteredExpenses.push(e);
     });
   } else {
@@ -130,7 +131,7 @@ export default function AnalyticsClient({
 
   validFilteredOrders.forEach(o => {
     // Trend Data Logic (Day or Month depending on filter)
-    const d = new Date(o.created_at);
+    const d = toVNTime(o.created_at);
     
     // Nếu lọc theo 'today', 'week', 'custom' (ngắn), hiển thị theo Ngày
     // Nếu 'month', 'year', 'all', hiển thị theo Tháng
@@ -219,7 +220,7 @@ export default function AnalyticsClient({
 
   validFilteredOrders.forEach(o => {
     const cust = initialCustomers.find(c => c.id === o.customer_id);
-    const isNew = cust && periods && new Date(cust.created_at) >= periods.currentStart;
+    const isNew = cust && periods && toVNTime(cust.created_at) >= periods.currentStart;
     const incomeToAdd = (Number(o.total_income) || 0) + (Number(o.manual_adjustment) || 0);
     if (!isNew) { 
       returningIncome += incomeToAdd;
@@ -237,7 +238,7 @@ export default function AnalyticsClient({
   const heatmapHours = Array.from({ length: 24 }, (_, i) => i);
   
   validFilteredOrders.forEach(o => {
-    const d = new Date(o.created_at);
+    const d = toVNTime(o.created_at);
     const key = `${d.getDay()}-${d.getHours()}`;
     heatmapData[key] = (heatmapData[key] || 0) + 1;
   });

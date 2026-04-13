@@ -754,8 +754,8 @@ export default function SettingsClient({ initialProjects, initialUsers, initialR
                      <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded border border-blue-100 leading-relaxed font-medium">
                        <strong>Cơ chế tính mặc định hệ thống:</strong>
                        <ul className="list-disc pl-4 mt-1 space-y-0.5 opacity-90">
-                         <li>Sản phẩm có tên VD <em>"Pack 5"</em> ➔ Income = 5 x 5$ = <strong>$25</strong></li>
-                         <li>Sản phẩm có tên VD <em>"Pack 10"</em> ➔ Income = 10 x 5$ = <strong>$50</strong></li>
+                         <li>Sản phẩm có tên VD <em>&quot;Pack 5&quot;</em> ➔ Income = 5 x 5$ = <strong>$25</strong></li>
+                         <li>Sản phẩm có tên VD <em>&quot;Pack 10&quot;</em> ➔ Income = 10 x 5$ = <strong>$50</strong></li>
                          <li>Sản phẩm <em>không</em> chứa từ khóa Pack ➔ Mặc định = <strong>$5</strong> / 1 SP</li>
                        </ul>
                      </div>

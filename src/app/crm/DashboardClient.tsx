@@ -4,6 +4,7 @@ import { DollarSign, ShoppingCart, Users, TrendingDown, Wallet, AlertCircle, Lay
 import Link from "next/link";
 import { useState, useMemo } from "react";
 import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
+import { toVNTime } from "@/lib/time";
 
 export default function DashboardClient({ projects, orders, customers, expenses = [], isAdmin = true, selectedProject, initialRates }: { projects: any[], orders: any[], customers: any[], expenses?: any[], isAdmin?: boolean, selectedProject?: any, initialRates?: any }) {
   const [currency, setCurrency] = useState("AUD");
@@ -27,7 +28,7 @@ export default function DashboardClient({ projects, orders, customers, expenses 
   // --- FILTER CORE DATA BY DATE ---
   const filteredOrders = useMemo(() => orders.filter((o: any) => {
     if (dateFilter === 'all') return true;
-    const od = new Date(o.created_at);
+    const od = toVNTime(o.created_at);
     if (dateFilter === 'today') return isToday(od);
     if (dateFilter === 'week') return isThisWeek(od, { weekStartsOn: 1 });
     if (dateFilter === 'month') return isThisMonth(od);
@@ -40,7 +41,7 @@ export default function DashboardClient({ projects, orders, customers, expenses 
 
   const filteredExpenses = useMemo(() => expenses.filter((e: any) => {
     if (dateFilter === 'all') return true;
-    const ed = new Date(e.expense_date || e.created_at || new Date());
+    const ed = toVNTime(e.expense_date || e.created_at || new Date());
     if (dateFilter === 'today') return isToday(ed);
     if (dateFilter === 'week') return isThisWeek(ed, { weekStartsOn: 1 });
     if (dateFilter === 'month') return isThisMonth(ed);
@@ -69,10 +70,10 @@ export default function DashboardClient({ projects, orders, customers, expenses 
   const retentionRate = customers.length > 0 ? ((returningCustomers / customers.length) * 100).toFixed(1) : "0.0";
 
   // 2. Identify Sleepy Customers (60 days no order)
-  const today = new Date();
+  const today = toVNTime();
   const sleepyCustomers = customers.filter(c => {
     if (!c.last_order_date) return false;
-    const lastOrder = new Date(c.last_order_date);
+    const lastOrder = toVNTime(c.last_order_date);
     const diffTime = Math.abs(today.getTime() - lastOrder.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 60;

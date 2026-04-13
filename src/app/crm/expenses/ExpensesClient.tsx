@@ -3,8 +3,9 @@
 import { useState, useMemo, useRef } from "react";
 import { Plus, Trash2, TrendingDown, Calendar, Search, Download } from "lucide-react";
 import { addExpenseAction, deleteExpenseAction } from "./actions";
-import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
+import { isSameDay, isSameWeek, isSameMonth, isSameYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import * as ExcelJS from "exceljs";
+import { toVNTime } from "@/lib/time";
 
 export default function ExpensesClient({ initialProjects, initialExpenses, initialRates }: { initialProjects: any[], initialExpenses: any[], initialRates: any }) {
   const [isAdding, setIsAdding] = useState(false);
@@ -33,11 +34,12 @@ export default function ExpensesClient({ initialProjects, initialExpenses, initi
       if (!dOptions) {
         matchesDate = false;
       } else {
-        const d = new Date(dOptions);
-        if (dateFilter === 'today') matchesDate = isToday(d);
-        else if (dateFilter === 'week') matchesDate = isThisWeek(d, { weekStartsOn: 1 });
-        else if (dateFilter === 'month') matchesDate = isThisMonth(d);
-        else if (dateFilter === 'year') matchesDate = isThisYear(d);
+        const d = toVNTime(dOptions);
+        const vnNow = toVNTime();
+        if (dateFilter === 'today') matchesDate = isSameDay(d, vnNow);
+        else if (dateFilter === 'week') matchesDate = isSameWeek(d, vnNow, { weekStartsOn: 1 });
+        else if (dateFilter === 'month') matchesDate = isSameMonth(d, vnNow);
+        else if (dateFilter === 'year') matchesDate = isSameYear(d, vnNow);
         else if (dateFilter === 'custom' && startDate && endDate) {
           matchesDate = isWithinInterval(d, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
         }
@@ -117,7 +119,7 @@ export default function ExpensesClient({ initialProjects, initialExpenses, initi
 
       expensesToExport.forEach(e => {
         sheet.addRow({
-          expense_date: e.expense_date ? new Date(e.expense_date).toLocaleDateString() : "-",
+          expense_date: e.expense_date ? new Date(e.expense_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh' }) : "-",
           project_name: e.projects?.name || "Global",
           reason: e.reason,
           amount: Number(e.amount),
@@ -334,7 +336,7 @@ export default function ExpensesClient({ initialProjects, initialExpenses, initi
                       <td className="px-5 py-4">
                         <div className="text-slate-700 font-medium flex items-center gap-2">
                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                           {new Date(e.expense_date).toLocaleDateString()}
+                           {new Date(e.expense_date).toLocaleDateString('en-GB', { timeZone: 'Asia/Ho_Chi_Minh' })}
                         </div>
                       </td>
                       <td className="px-5 py-4 font-bold text-slate-800">
