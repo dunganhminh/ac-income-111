@@ -3,7 +3,7 @@
 import { DollarSign, ShoppingCart, Users, TrendingDown, Wallet, AlertCircle, LayoutDashboard, ChevronRight, Calendar } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo } from "react";
-import { isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
+import { isSameDay, isSameWeek, isSameMonth, isSameYear, isWithinInterval, startOfDay, endOfDay, parseISO } from "date-fns";
 import { toVNTime } from "@/lib/time";
 
 export default function DashboardClient({ projects, orders, customers, expenses = [], isAdmin = true, selectedProject, initialRates }: { projects: any[], orders: any[], customers: any[], expenses?: any[], isAdmin?: boolean, selectedProject?: any, initialRates?: any }) {
@@ -26,31 +26,37 @@ export default function DashboardClient({ projects, orders, customers, expenses 
   };
 
   // --- FILTER CORE DATA BY DATE ---
-  const filteredOrders = useMemo(() => orders.filter((o: any) => {
-    if (dateFilter === 'all') return true;
-    const od = toVNTime(o.created_at);
-    if (dateFilter === 'today') return isToday(od);
-    if (dateFilter === 'week') return isThisWeek(od, { weekStartsOn: 1 });
-    if (dateFilter === 'month') return isThisMonth(od);
-    if (dateFilter === 'year') return isThisYear(od);
-    if (dateFilter === 'custom' && startDate && endDate) {
-      return isWithinInterval(od, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
-    }
-    return true;
-  }), [orders, dateFilter, startDate, endDate]);
+  const filteredOrders = useMemo(() => {
+    const vnNow = toVNTime();
+    return orders.filter((o: any) => {
+      if (dateFilter === 'all') return true;
+      const od = toVNTime(o.created_at);
+      if (dateFilter === 'today') return isSameDay(od, vnNow);
+      if (dateFilter === 'week') return isSameWeek(od, vnNow, { weekStartsOn: 1 });
+      if (dateFilter === 'month') return isSameMonth(od, vnNow);
+      if (dateFilter === 'year') return isSameYear(od, vnNow);
+      if (dateFilter === 'custom' && startDate && endDate) {
+        return isWithinInterval(od, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
+      }
+      return true;
+    })
+  }, [orders, dateFilter, startDate, endDate]);
 
-  const filteredExpenses = useMemo(() => expenses.filter((e: any) => {
-    if (dateFilter === 'all') return true;
-    const ed = toVNTime(e.expense_date || e.created_at || new Date());
-    if (dateFilter === 'today') return isToday(ed);
-    if (dateFilter === 'week') return isThisWeek(ed, { weekStartsOn: 1 });
-    if (dateFilter === 'month') return isThisMonth(ed);
-    if (dateFilter === 'year') return isThisYear(ed);
-    if (dateFilter === 'custom' && startDate && endDate) {
-      return isWithinInterval(ed, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
-    }
-    return true;
-  }), [expenses, dateFilter, startDate, endDate]);
+  const filteredExpenses = useMemo(() => {
+    const vnNow = toVNTime();
+    return expenses.filter((e: any) => {
+      if (dateFilter === 'all') return true;
+      const ed = toVNTime(e.expense_date || e.created_at || new Date());
+      if (dateFilter === 'today') return isSameDay(ed, vnNow);
+      if (dateFilter === 'week') return isSameWeek(ed, vnNow, { weekStartsOn: 1 });
+      if (dateFilter === 'month') return isSameMonth(ed, vnNow);
+      if (dateFilter === 'year') return isSameYear(ed, vnNow);
+      if (dateFilter === 'custom' && startDate && endDate) {
+        return isWithinInterval(ed, { start: startOfDay(parseISO(startDate)), end: endOfDay(parseISO(endDate)) });
+      }
+      return true;
+    })
+  }, [expenses, dateFilter, startDate, endDate]);
   
   // 1. Calculate Top Metrics
   const { totalIncome, totalNetRevenue, totalExpenses, netProfit, totalOrders } = useMemo(() => {
