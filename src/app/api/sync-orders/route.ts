@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     // Data mới kéo về sẽ đè lên dựa vào OnConflict Upsert thông minh
 
     // 3. Gọi duy nhất 1 trang thay vì vòng lặp while để tránh Timeout
-    const url = `${baseUrl}/wp-json/wc/v3/orders?after=${startDate}T00:00:00Z&before=${endDate}T23:59:59Z&per_page=100&page=${page}`;
+    const url = `${baseUrl}/wp-json/wc/v3/orders?after=${startDate}T00:00:00Z&before=${endDate}T23:59:59Z&per_page=25&page=${page}`;
     
     const wpRes = await fetch(url, {
       method: 'GET',
@@ -70,8 +70,8 @@ export async function POST(req: Request) {
     }
 
     // 5. Trả về Frontend Cờ hasMore:
-    // Nếu trang hiện tại lấy bằng hoặc ít hơn 100 có thể là đã hết đơn, WooCommerce sẽ trả mảng pageOrders.length = 100 nếu đầy.
-    const hasMore = pageOrders.length === 100;
+    // Nếu trang hiện tại lấy bằng hoặc ít hơn 25 có thể là đã hết đơn, WooCommerce sẽ trả mảng pageOrders.length = 25 nếu đầy.
+    const hasMore = pageOrders.length === 25;
 
     return NextResponse.json({ 
       success: true, 
