@@ -58,19 +58,26 @@ export default function DashboardClient({ projects, orders, customers, expenses 
     })
   }, [expenses, dateFilter, startDate, endDate]);
   
+  // Create valid orders array to exclude canceled/refunded/failed orders from calculations
+  const validFilteredOrders = useMemo(() => {
+    const invalidStatuses = ['cancelled', 'refunded', 'failed', 'trash'];
+    return filteredOrders.filter((o: any) => !invalidStatuses.includes(o.status));
+  }, [filteredOrders]);
+  
   // 1. Calculate Top Metrics
   const { totalIncome, totalNetRevenue, totalExpenses, netProfit, totalOrders } = useMemo(() => {
-    const income = filteredOrders.reduce((sum: number, o: any) => sum + Number(o.total_income) + Number(o.manual_adjustment), 0);
-    const netRev = filteredOrders.reduce((sum: number, o: any) => sum + (Number(o.total_price) - Number(o.paypal_fee) - Number(o.shipping_fee || 0)), 0);
+    // Thu nhập và doanh thu ròng chỉ lấy từ các đơn hàng hợp lệ
+    const income = validFilteredOrders.reduce((sum: number, o: any) => sum + Number(o.total_income) + Number(o.manual_adjustment), 0);
+    const netRev = validFilteredOrders.reduce((sum: number, o: any) => sum + (Number(o.total_price) - Number(o.paypal_fee) - Number(o.shipping_fee || 0)), 0);
     const exp = filteredExpenses.reduce((sum: number, e: any) => sum + (Number(e.amount_usd) * rates.aud), 0);
     return {
       totalIncome: income,
       totalNetRevenue: netRev,
       totalExpenses: exp,
       netProfit: income - exp,
-      totalOrders: filteredOrders.length
+      totalOrders: validFilteredOrders.length
     };
-  }, [filteredOrders, filteredExpenses, rates.aud]);
+  }, [validFilteredOrders, filteredExpenses, rates.aud]);
   
   const returningCustomers = customers.filter((c: any) => Number(c.lifetime_orders) > 1).length;
   const retentionRate = customers.length > 0 ? ((returningCustomers / customers.length) * 100).toFixed(1) : "0.0";
@@ -88,18 +95,18 @@ export default function DashboardClient({ projects, orders, customers, expenses 
   const topProjects = useMemo(() => {
     if (!isAdmin) return projects.map((p: any) => ({...p, total_income: 0, order_count: 0}));
     const incomeMap: Record<string, number> = {};
-    filteredOrders.forEach((o: any) => {
+    validFilteredOrders.forEach((o: any) => {
       if (!incomeMap[o.project_id]) incomeMap[o.project_id] = 0;
-      incomeMap[o.project_id] += Number(o.total_income);
+      incomeMap[o.project_id] += Number(o.total_income) + Number(o.manual_adjustment || 0);
     });
     return projects
       .map((p: any) => ({
         ...p,
         total_income: incomeMap[p.id] || 0,
-        order_count: filteredOrders.filter((o: any) => o.project_id === p.id).length
+        order_count: validFilteredOrders.filter((o: any) => o.project_id === p.id).length
       }))
       .sort((a: any, b: any) => b.total_income - a.total_income);
-  }, [isAdmin, projects, filteredOrders]);
+  }, [isAdmin, projects, validFilteredOrders]);
 
   return (
     <div className="p-4 pt-16 md:p-8 md:pt-8 h-full flex flex-col overflow-y-auto">

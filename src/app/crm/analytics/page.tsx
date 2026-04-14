@@ -20,19 +20,19 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   const ordersFilters = projectId 
     ? (q: any) => q.eq("project_id", projectId).is("deleted_at", null) 
     : (q: any) => q.is("deleted_at", null);
-  const { data: orders } = await fetchAllSupabase("orders", "*", ordersFilters);
+  const { data: orders } = await fetchAllSupabase("orders", "*", ordersFilters, { column: 'created_at', options: { ascending: false } });
 
   // expenses
   const expFilters = projectId 
     ? (q: any) => q.eq("project_id", projectId).is("deleted_at", null) 
     : (q: any) => q.is("deleted_at", null);
-  const { data: expenses } = await fetchAllSupabase("expenses", "*", expFilters);
+  const { data: expenses } = await fetchAllSupabase("expenses", "*", expFilters, { column: 'created_at', options: { ascending: false } });
 
   // customers
   const custFilters = projectId 
     ? (q: any) => q.eq("project_id", projectId).is("deleted_at", null)
     : (q: any) => q.is("deleted_at", null);
-  const { data: customers } = await fetchAllSupabase("customers", "*", custFilters);
+  const { data: customers } = await fetchAllSupabase("customers", "*", custFilters, { column: 'created_at', options: { ascending: false } });
 
   const { data: ratesSetting } = await supabase
     .from("system_settings")

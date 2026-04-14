@@ -14,7 +14,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const { data: customers, error } = await fetchAllSupabase(
     "customers",
     "id, full_name, email, phone, tags, last_order_date, lifetime_orders, lifetime_spent, project:project_id(name)",
-    filters
+    filters,
+    { column: 'created_at', options: { ascending: false } }
   );
 
   if (error) {

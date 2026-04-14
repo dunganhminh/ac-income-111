@@ -27,9 +27,9 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     : (q: any) => q.is("deleted_at", null);
 
   const [ {data: orders, error: oErr}, {data: customers, error: cErr}, {data: expenses, error: exErr} ] = await Promise.all([
-    fetchAllSupabase("orders", "id, project_id, status, total_price, shipping_fee, paypal_fee, total_income, manual_adjustment, created_at", oFilters),
-    fetchAllSupabase("customers", "id, project_id, lifetime_orders, last_order_date", cFilters),
-    fetchAllSupabase("expenses", "id, project_id, amount_usd, expense_date, created_at", exFilters)
+    fetchAllSupabase("orders", "id, project_id, status, total_price, shipping_fee, paypal_fee, total_income, manual_adjustment, created_at", oFilters, { column: 'created_at', options: { ascending: false } }),
+    fetchAllSupabase("customers", "id, project_id, lifetime_orders, last_order_date", cFilters, { column: 'created_at', options: { ascending: false } }),
+    fetchAllSupabase("expenses", "id, project_id, amount_usd, expense_date, created_at", exFilters, { column: 'created_at', options: { ascending: false } })
   ]);
 
   const { data: ratesSetting } = await supabase
